@@ -1,0 +1,25 @@
+export interface AppUsage {
+  name: string
+  icon: string
+  minutes: number
+}
+
+export interface DayRecord {
+  date: string
+  usedMinutes: number | null
+  verified: boolean
+  apps?: AppUsage[]
+}
+
+export interface Profile {
+  id: string
+  name: string
+  school: string
+  grade: string
+  authProvider: 'phone' | 'google'
+  phone: string
+  email: string
+  inviteCode: string
+  emoji: string
+  avatar: string
+}
