@@ -2,8 +2,15 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 
 export class ApiError extends Error {}
 
+let adminPassword: string | null = null
+
+export function setAdminPassword(password: string) {
+  adminPassword = password
+}
+
 async function request<T>(path: string, options: RequestInit & { userId?: string } = {}): Promise<T> {
   const { userId, headers, ...rest } = options
+  const isAdminPath = path.startsWith('/admin')
   let res: Response
   try {
     res = await fetch(`${BASE_URL}${path}`, {
@@ -11,11 +18,16 @@ async function request<T>(path: string, options: RequestInit & { userId?: string
       headers: {
         'Content-Type': 'application/json',
         ...(userId ? { 'x-user-id': userId } : {}),
+        ...(isAdminPath && adminPassword ? { Authorization: `Basic ${btoa(`admin:${adminPassword}`)}` } : {}),
         ...headers,
       },
     })
   } catch {
     throw new ApiError('서버에 연결할 수 없어요. 잠시 후 다시 시도해주세요.')
+  }
+
+  if (isAdminPath && res.status === 401) {
+    throw new ApiError('비밀번호가 틀렸어요.')
   }
 
   const body = await res.json().catch(() => ({}))

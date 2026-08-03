@@ -2,8 +2,11 @@ import { Router } from 'express'
 import { db } from '../db.js'
 import { logEvent } from '../log.js'
 import { asyncHandler } from '../asyncHandler.js'
+import { requireAdminPassword } from '../adminAuth.js'
 
 export const adminRouter = Router()
+
+adminRouter.use(requireAdminPassword)
 
 adminRouter.get(
   '/users',

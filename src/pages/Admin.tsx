@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import * as api from '../lib/api'
 import type { ApiChallenge, ApiLog, ApiUser } from '../lib/api'
 import Avatar from '../components/Avatar'
@@ -34,6 +34,9 @@ export default function Admin() {
   const [confirmTarget, setConfirmTarget] = useState<{ kind: 'user' | 'challenge'; id: string; label: string } | null>(
     null,
   )
+  const [unlocked, setUnlocked] = useState(false)
+  const [pwInput, setPwInput] = useState('')
+  const [pwError, setPwError] = useState('')
 
   function loadAll() {
     Promise.all([api.adminGetUsers(), api.adminGetChallenges(), api.adminGetLogs()])
@@ -43,12 +46,58 @@ export default function Admin() {
         setLogs(l.logs)
         setError('')
       })
-      .catch(() =>
-        setError('백엔드 서버(http://localhost:4000)에 연결하지 못했어요. npm run server로 실행 중인지 확인해주세요.'),
-      )
+      .catch((err) => {
+        if (err instanceof api.ApiError && err.message === '비밀번호가 틀렸어요.') {
+          sessionStorage.removeItem('lessgo_admin_pw')
+          setUnlocked(false)
+          setPwError('비밀번호가 틀렸어요.')
+          return
+        }
+        setError('백엔드 서버에 연결하지 못했어요.')
+      })
   }
 
-  useEffect(loadAll, [])
+  useEffect(() => {
+    const saved = sessionStorage.getItem('lessgo_admin_pw')
+    if (saved) {
+      api.setAdminPassword(saved)
+      setUnlocked(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (unlocked) loadAll()
+  }, [unlocked])
+
+  function handleUnlock(e: FormEvent) {
+    e.preventDefault()
+    api.setAdminPassword(pwInput)
+    sessionStorage.setItem('lessgo_admin_pw', pwInput)
+    setPwError('')
+    setUnlocked(true)
+  }
+
+  if (!unlocked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F3F5FA] px-6">
+        <form onSubmit={handleUnlock} className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+          <p className="text-base font-bold text-[#1B2333]">관리자 비밀번호</p>
+          <input
+            type="password"
+            autoFocus
+            value={pwInput}
+            onChange={(e) => setPwInput(e.target.value)}
+            className="mt-4 w-full rounded-xl border border-[#E2E6F0] px-3 py-2.5 text-sm"
+            placeholder="비밀번호 입력"
+          />
+          {pwError && <p className="mt-2 text-sm text-red-600">{pwError}</p>}
+          <button type="submit" className="mt-4 w-full rounded-xl bg-[#1B2333] py-2.5 text-sm font-bold text-white">
+            입장
+          </button>
+        </form>
+      </div>
+    )
+  }
 
   async function handleDelete() {
     if (!confirmTarget) return
