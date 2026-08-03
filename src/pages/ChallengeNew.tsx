@@ -441,7 +441,7 @@ export default function ChallengeNew() {
         <button
           type="submit"
           disabled={!canSubmit}
-          className="mt-2 w-full rounded-2xl bg-gradient-primary-soft py-3.5 text-sm font-extrabold text-white shadow-glow transition-transform active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint disabled:shadow-none"
+          className="mt-2 w-full rounded-2xl bg-gradient-primary-soft py-3.5 text-sm font-extrabold text-white shadow-glow transition-transform active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-line disabled:bg-none disabled:text-ink-faint disabled:shadow-none"
         >
           {submitting ? '만드는 중…' : '챌린지 만들기'}
         </button>
