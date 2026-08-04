@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useStore } from '../state/store'
 import * as api from '../lib/api'
 import { ApiError } from '../lib/api'
-import { APP_CATALOG } from '../state/seed'
+import { APP_CATALOG, customAppEntry } from '../state/seed'
 import { ChevronRightIcon, XIcon } from '../components/icons'
 import AppIcon from '../components/AppIcon'
 
@@ -13,7 +13,7 @@ const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
 interface AppLimitRow {
   name: string
   icon: string
-  hours: number
+  minutes: number
 }
 
 export default function ChallengeNew() {
@@ -27,6 +27,8 @@ export default function ChallengeNew() {
   const [appLimits, setAppLimits] = useState<AppLimitRow[]>([])
   const [pickerOpen, setPickerOpen] = useState(false)
   const [shakingApp, setShakingApp] = useState<string | null>(null)
+  const [customInputOpen, setCustomInputOpen] = useState(false)
+  const [customName, setCustomName] = useState('')
 
   const [periodMode, setPeriodMode] = useState<'preset' | 'custom'>('preset')
   const [periodDays, setPeriodDays] = useState<number | null>(7)
@@ -61,23 +63,31 @@ export default function ChallengeNew() {
   function addAppLimit(catalogItem: (typeof APP_CATALOG)[number]) {
     setAppLimits((prev) => {
       if (prev.some((a) => a.name === catalogItem.name)) return prev
-      return [...prev, { ...catalogItem, hours: 1 }]
+      return [...prev, { ...catalogItem, minutes: 60 }]
     })
     setPickerOpen(false)
   }
 
-  function adjustAppLimit(name: string, delta: number) {
+  function addCustomAppLimit() {
+    const name = customName.trim()
+    if (!name || appLimits.some((a) => a.name === name)) return
+    setAppLimits((prev) => [...prev, { ...customAppEntry(name), minutes: 60 }])
+    setCustomName('')
+    setCustomInputOpen(false)
+    setPickerOpen(false)
+  }
+
+  function setAppLimitMinutes(name: string, minutes: number) {
+    const clamped = Math.max(0, Math.min(24 * 60, minutes))
     setAppLimits((prev) =>
       prev.map((a) => {
         if (a.name !== name) return a
-        const next = a.hours + delta
-        if (next < 1) return a
-        if (next > goalHours) {
+        if (clamped > goalHours * 60) {
           setShakingApp(name)
           window.setTimeout(() => setShakingApp((cur) => (cur === name ? null : cur)), 2000)
           return a
         }
-        return { ...a, hours: next }
+        return { ...a, minutes: clamped }
       }),
     )
   }
@@ -106,7 +116,7 @@ export default function ChallengeNew() {
         donationAmount: stakeEnabled ? donationAmount : 0,
         donationPeriod,
         verifyByHour,
-        appLimits: appLimits.map((a) => ({ name: a.name, icon: a.icon, minutes: a.hours * 60 })),
+        appLimits: appLimits.map((a) => ({ name: a.name, icon: a.icon, minutes: a.minutes })),
       })
       pushToast('챌린지를 만들었어요')
       navigate(`/challenges/${challenge.id}`)
@@ -187,24 +197,29 @@ export default function ChallengeNew() {
                         <AppIcon icon={a.icon} className="h-5 w-5" />
                       </span>
                       <span className="flex-1 text-sm font-semibold text-ink">{a.name}</span>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => adjustAppLimit(a.name, -1)}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-bg text-sm font-bold text-ink-soft active:scale-90"
+                      <div className="flex items-center gap-1">
+                        <select
+                          value={Math.floor(a.minutes / 60)}
+                          onChange={(e) => setAppLimitMinutes(a.name, Number(e.target.value) * 60 + (a.minutes % 60))}
+                          className="rounded-lg border border-line bg-surface py-1.5 text-sm font-bold tabular-nums text-ink"
                         >
-                          −
-                        </button>
-                        <span className="w-14 text-center text-sm font-bold tabular-nums text-ink">
-                          {a.hours}시간
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => adjustAppLimit(a.name, 1)}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-bg text-sm font-bold text-ink-soft active:scale-90"
+                          {Array.from({ length: 25 }, (_, h) => (
+                            <option key={h} value={h}>
+                              {h}시간
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={a.minutes % 60}
+                          onChange={(e) => setAppLimitMinutes(a.name, Math.floor(a.minutes / 60) * 60 + Number(e.target.value))}
+                          className="rounded-lg border border-line bg-surface py-1.5 text-sm font-bold tabular-nums text-ink"
                         >
-                          +
-                        </button>
+                          {Array.from({ length: 60 }, (_, m) => (
+                            <option key={m} value={m}>
+                              {m}분
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <button
                         type="button"
@@ -226,18 +241,47 @@ export default function ChallengeNew() {
                   + 앱 추가하기
                 </button>
                 {pickerOpen && (
-                  <div className="mt-2 grid grid-cols-4 gap-2 rounded-2xl border border-line bg-bg p-3">
-                    {APP_CATALOG.filter((c) => !appLimits.some((a) => a.name === c.name)).map((c) => (
+                  <div className="mt-2 rounded-2xl border border-line bg-bg p-3">
+                    <div className="grid grid-cols-4 gap-2">
+                      {APP_CATALOG.filter((c) => !appLimits.some((a) => a.name === c.name)).map((c) => (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => addAppLimit(c)}
+                          className="flex flex-col items-center gap-1 rounded-xl bg-surface py-2.5 text-[11px] font-semibold text-ink-soft shadow-card active:scale-95"
+                        >
+                          <AppIcon icon={c.icon} className="h-7 w-7 rounded-lg" />
+                          {c.name}
+                        </button>
+                      ))}
                       <button
-                        key={c.name}
                         type="button"
-                        onClick={() => addAppLimit(c)}
+                        onClick={() => setCustomInputOpen((v) => !v)}
                         className="flex flex-col items-center gap-1 rounded-xl bg-surface py-2.5 text-[11px] font-semibold text-ink-soft shadow-card active:scale-95"
                       >
-                        <AppIcon icon={c.icon} className="h-7 w-7 rounded-lg" />
-                        {c.name}
+                        <AppIcon icon="/app-icons/custom.svg" className="h-7 w-7 rounded-lg" />
+                        직접입력
                       </button>
-                    ))}
+                    </div>
+                    {customInputOpen && (
+                      <div className="mt-2 flex gap-2">
+                        <input
+                          value={customName}
+                          onChange={(e) => setCustomName(e.target.value)}
+                          placeholder="앱 이름 입력"
+                          autoFocus
+                          className="flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={addCustomAppLimit}
+                          disabled={!customName.trim()}
+                          className="rounded-xl bg-primary px-4 text-sm font-bold text-white disabled:opacity-50"
+                        >
+                          추가
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

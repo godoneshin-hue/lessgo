@@ -84,6 +84,13 @@ export function socialAuth(payload: {
   })
 }
 
+export function analyzeScreenTime(userId: string, images: string[], trackedAppNames: string[]) {
+  return request<{ totalMinutes: number | null; apps: { name: string; minutes: number }[]; hasPerAppBreakdown: boolean }>(
+    '/verify/analyze',
+    { method: 'POST', userId, body: JSON.stringify({ images, trackedAppNames }) },
+  )
+}
+
 export function updateAvatar(userId: string, avatar: string) {
   return request<{ user: ApiUser }>('/auth/me', { method: 'PATCH', userId, body: JSON.stringify({ avatar }) })
 }

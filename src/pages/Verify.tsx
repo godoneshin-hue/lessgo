@@ -4,18 +4,24 @@ import { useStore } from '../state/store'
 import { isSuccess } from '../lib/stats'
 import { usePersonalChallenge } from '../lib/usePersonalChallenge'
 import { addDays, minutesToLabel, todayISO, weekdayKr } from '../lib/date'
-import { APP_CATALOG, simulateAppBreakdown } from '../state/seed'
+import { fileToScreenshotDataUrl } from '../lib/image'
+import * as api from '../lib/api'
+import { ApiError } from '../lib/api'
 import type { AppUsage } from '../state/types'
-import { CameraIcon, ChevronRightIcon, XIcon } from '../components/icons'
+import { ChevronRightIcon, XIcon } from '../components/icons'
 import AppIcon from '../components/AppIcon'
 
+const MAX_IMAGES = 10
+
 export default function Verify() {
-  const { records, todayRecord, verifyToday, pushToast } = useStore()
+  const { profile, records, todayRecord, verifyToday, pushToast } = useStore()
   const { personalChallenge, loading } = usePersonalChallenge()
   const [apps, setApps] = useState<AppUsage[]>([])
   const [seeded, setSeeded] = useState(false)
-  const [fileName, setFileName] = useState<string | null>(null)
-  const [pickerOpen, setPickerOpen] = useState(false)
+  const [images, setImages] = useState<string[]>([])
+  const [analyzing, setAnalyzing] = useState(false)
+  const [totalFromAnalysis, setTotalFromAnalysis] = useState<number | null>(null)
+  const [hasAnalyzed, setHasAnalyzed] = useState(false)
 
   const today = todayISO()
 
@@ -49,33 +55,50 @@ export default function Verify() {
 
   const threshold = { dailyLimitMinutes: personalChallenge.goalMinutes }
   const last7 = Array.from({ length: 7 }, (_, i) => addDays(today, -(6 - i)))
-  const total = apps.reduce((sum, a) => sum + a.minutes, 0)
+  const total = totalFromAnalysis ?? apps.reduce((sum, a) => sum + a.minutes, 0)
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const goalMinutes = personalChallenge!.goalMinutes
-    const simulatedTotal = Math.round((goalMinutes - 60 + Math.random() * 120) / 60) * 60
-    const breakdown = simulateAppBreakdown(Math.max(60, simulatedTotal))
-    setApps(breakdown)
-    setFileName(file.name)
-    pushToast(`캡처에서 앱 ${breakdown.length}개 사용 내역을 찾았어요`)
+  async function handleFilesAdd(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = ''
+    if (files.length === 0) return
+    if (images.length + files.length > MAX_IMAGES) {
+      pushToast(`사진은 최대 ${MAX_IMAGES}장까지 업로드할 수 있어요.`)
+      return
+    }
+    try {
+      const next = await Promise.all(files.map((f) => fileToScreenshotDataUrl(f)))
+      setImages((prev) => [...prev, ...next])
+    } catch {
+      pushToast('사진을 처리하지 못했어요. 다른 사진으로 시도해주세요.')
+    }
   }
 
-  function addApp(catalogItem: (typeof APP_CATALOG)[number]) {
-    setApps((prev) => {
-      if (prev.some((a) => a.name === catalogItem.name)) return prev
-      return [...prev, { ...catalogItem, minutes: 60 }]
-    })
-    setPickerOpen(false)
+  function removeImage(index: number) {
+    setImages((prev) => prev.filter((_, i) => i !== index))
   }
 
-  function updateHours(index: number, minutes: number) {
-    setApps((prev) => prev.map((a, i) => (i === index ? { ...a, minutes: Math.max(0, minutes) } : a)))
-  }
-
-  function removeApp(index: number) {
-    setApps((prev) => prev.filter((_, i) => i !== index))
+  async function runAnalysis() {
+    if (images.length === 0 || !profile.id) return
+    setAnalyzing(true)
+    try {
+      const trackedAppNames = apps.map((a) => a.name)
+      const result = await api.analyzeScreenTime(profile.id, images, trackedAppNames)
+      setApps((prev) => prev.map((a) => {
+        const match = result.apps.find((r) => r.name === a.name)
+        return match ? { ...a, minutes: match.minutes } : a
+      }))
+      setTotalFromAnalysis(result.totalMinutes)
+      setHasAnalyzed(true)
+      if (result.totalMinutes !== null && !result.hasPerAppBreakdown && apps.length > 0) {
+        pushToast('전체 사용시간만 보여요. 앱별 사용시간 화면도 같이 올려주세요.')
+      } else {
+        pushToast('사진 분석이 끝났어요.')
+      }
+    } catch (err) {
+      pushToast(err instanceof ApiError ? err.message : '사진을 분석하지 못했어요.')
+    } finally {
+      setAnalyzing(false)
+    }
   }
 
   function handleSubmit() {
@@ -136,13 +159,43 @@ export default function Verify() {
         목표는 <span className="font-bold text-ink">{minutesToLabel(personalChallenge.goalMinutes)}</span> 이내예요.
       </p>
 
-      <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-dashed border-line bg-surface px-4 py-4 text-sm font-semibold text-ink-soft transition-colors hover:border-primary hover:text-primary-ink">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-ink">
-          <CameraIcon className="h-5 w-5" />
-        </span>
-        <span>{fileName ? `첨부됨 · ${fileName}` : '스크린타임 캡처 업로드하고 자동으로 채우기'}</span>
-        <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
-      </label>
+      <section className="mt-5 rounded-3xl bg-surface p-5 shadow-card">
+        <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">스크린타임 캡처</p>
+
+        {images.length > 0 && (
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            {images.map((src, idx) => (
+              <div key={idx} className="relative aspect-square overflow-hidden rounded-xl bg-bg">
+                <img src={src} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeImage(idx)}
+                  aria-label="사진 삭제"
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white"
+                >
+                  <XIcon className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {images.length < MAX_IMAGES && (
+          <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line py-3 text-sm font-semibold text-ink-soft transition-colors hover:border-primary hover:text-primary-ink">
+            + 사진 추가하기 ({images.length}/{MAX_IMAGES})
+            <input type="file" accept="image/*" multiple className="hidden" onChange={handleFilesAdd} />
+          </label>
+        )}
+
+        <button
+          type="button"
+          onClick={runAnalysis}
+          disabled={images.length === 0 || analyzing}
+          className="mt-3 w-full rounded-xl border border-primary py-2.5 text-sm font-bold text-primary-ink disabled:cursor-not-allowed disabled:border-line disabled:text-ink-faint"
+        >
+          {analyzing ? '분석 중…' : '사진으로 분석하기'}
+        </button>
+      </section>
 
       <section className="mt-4 rounded-3xl bg-surface p-5 shadow-card">
         <div className="flex items-center justify-between">
@@ -151,78 +204,25 @@ export default function Verify() {
         </div>
 
         {apps.length === 0 ? (
-          <p className="py-6 text-center text-sm text-ink-faint">아직 추가된 앱이 없어요.</p>
+          <p className="py-6 text-center text-sm text-ink-faint">이 챌린지에 설정된 앱이 없어요.</p>
         ) : (
           <ul className="mt-3 divide-y divide-line">
-            {apps.map((app, idx) => (
+            {apps.map((app) => (
               <li key={app.name} className="flex items-center gap-3 py-2.5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-bg text-lg">
                   <AppIcon icon={app.icon} className="h-6 w-6" />
                 </span>
                 <span className="flex-1 text-sm font-semibold text-ink">{app.name}</span>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => updateHours(idx, app.minutes - 60)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-bg text-sm font-bold text-ink-soft active:scale-90"
-                    aria-label={`${app.name} 1시간 줄이기`}
-                  >
-                    −
-                  </button>
-                  <span className="w-14 text-center text-sm font-bold tabular-nums text-ink">
-                    {minutesToLabel(app.minutes)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => updateHours(idx, app.minutes + 60)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-bg text-sm font-bold text-ink-soft active:scale-90"
-                    aria-label={`${app.name} 1시간 늘리기`}
-                  >
-                    +
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeApp(idx)}
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-faint hover:text-warn-text"
-                  aria-label={`${app.name} 삭제`}
-                >
-                  <XIcon className="h-3.5 w-3.5" />
-                </button>
+                <span className="text-sm font-bold tabular-nums text-ink-soft">{minutesToLabel(app.minutes)}</span>
               </li>
             ))}
           </ul>
         )}
 
-        <div className="relative mt-3">
-          <button
-            type="button"
-            onClick={() => setPickerOpen((v) => !v)}
-            className="w-full rounded-xl border border-line py-2.5 text-sm font-bold text-ink-soft hover:border-primary hover:text-primary-ink"
-          >
-            + 앱 추가하기
-          </button>
-          {pickerOpen && (
-            <div className="mt-2 grid grid-cols-4 gap-2 rounded-2xl border border-line bg-bg p-3">
-              {APP_CATALOG.filter((c) => !apps.some((a) => a.name === c.name)).map((c) => (
-                <button
-                  key={c.name}
-                  type="button"
-                  onClick={() => addApp(c)}
-                  className="flex flex-col items-center gap-1 rounded-xl bg-surface py-2.5 text-[11px] font-semibold text-ink-soft shadow-card active:scale-95"
-                >
-                  <AppIcon icon={c.icon} className="h-7 w-7 rounded-lg" />
-                  {c.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={apps.length === 0}
+          disabled={!hasAnalyzed}
           className="mt-5 w-full rounded-2xl bg-gradient-primary-soft py-3.5 text-sm font-extrabold text-white shadow-glow transition-transform active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-line disabled:bg-none disabled:text-ink-faint disabled:shadow-none"
         >
           인증 완료하기
