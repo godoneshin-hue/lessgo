@@ -4,18 +4,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Warm paper + ember system: momentum/energy over the generic
-        // "friendly SaaS blue," and warm neutrals over cold blue-grays.
         bg: '#F5F2EA',
         surface: '#FFFFFF',
         ink: '#1C1815',
         'ink-soft': '#645C50',
         'ink-faint': '#9C9385',
-        primary: '#D5451B',
-        'primary-light': '#E67A4C',
-        'primary-ink': '#A6350F',
-        'primary-deep': '#7A2508',
-        'primary-tint': '#FBE4D8',
+        primary: '#2F86F0',
+        'primary-light': '#6EC1F5',
+        'primary-ink': '#1E63C9',
+        'primary-deep': '#123E96',
+        'primary-tint': '#DCEEFB',
         success: '#1F7A4D',
         'success-text': '#145536',
         'success-tint': '#DFEEE3',
@@ -46,9 +44,9 @@ export default {
       },
       boxShadow: {
         card: '0 10px 28px -16px rgba(28, 24, 21, 0.22)',
-        pop: '0 16px 32px -16px rgba(213, 69, 27, 0.32)',
-        glow: '0 22px 44px -16px rgba(122, 37, 8, 0.45)',
-        ring: '0 12px 26px -12px rgba(166, 53, 15, 0.35)',
+        pop: '0 16px 32px -16px rgba(47, 134, 240, 0.32)',
+        glow: '0 22px 44px -16px rgba(18, 62, 150, 0.45)',
+        ring: '0 12px 26px -12px rgba(30, 99, 201, 0.35)',
       },
       borderRadius: {
         sm: '6px',
@@ -60,8 +58,8 @@ export default {
         '3xl': '20px',
       },
       backgroundImage: {
-        'gradient-primary': 'linear-gradient(135deg, #E67A4C 0%, #D5451B 55%, #7A2508 100%)',
-        'gradient-primary-soft': 'linear-gradient(135deg, #E67A4C 0%, #A6350F 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #6EC1F5 0%, #2F86F0 55%, #123E96 100%)',
+        'gradient-primary-soft': 'linear-gradient(135deg, #6EC1F5 0%, #1E63C9 100%)',
       },
     },
   },
