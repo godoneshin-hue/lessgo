@@ -45,6 +45,7 @@ export interface ApiUser {
   authProvider: 'phone' | 'google' | 'kakao'
   phone: string
   email: string
+  oauthId: string | null
   inviteCode: string
   avatar: string
   createdAt: string

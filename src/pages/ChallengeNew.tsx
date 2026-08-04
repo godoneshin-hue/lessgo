@@ -5,6 +5,7 @@ import * as api from '../lib/api'
 import { ApiError } from '../lib/api'
 import { APP_CATALOG } from '../state/seed'
 import { ChevronRightIcon, XIcon } from '../components/icons'
+import AppIcon from '../components/AppIcon'
 
 const PERIOD_OPTIONS = [1, 3, 5, 7, 14, 30]
 const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -182,8 +183,8 @@ export default function ChallengeNew() {
                           : 'border-line bg-surface'
                       }`}
                     >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg text-base">
-                        {a.icon}
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-bg text-base">
+                        <AppIcon icon={a.icon} className="h-5 w-5" />
                       </span>
                       <span className="flex-1 text-sm font-semibold text-ink">{a.name}</span>
                       <div className="flex items-center gap-1.5">
@@ -233,7 +234,7 @@ export default function ChallengeNew() {
                         onClick={() => addAppLimit(c)}
                         className="flex flex-col items-center gap-1 rounded-xl bg-surface py-2.5 text-[11px] font-semibold text-ink-soft shadow-card active:scale-95"
                       >
-                        <span className="text-lg">{c.icon}</span>
+                        <AppIcon icon={c.icon} className="h-7 w-7 rounded-lg" />
                         {c.name}
                       </button>
                     ))}

@@ -26,22 +26,16 @@ export const EMPTY_PROFILE: Profile = {
   avatar: '',
 }
 
-// Mocks what a real Google OAuth popup would return — used only until real
-// Google credentials are wired up (see auth.js signup provider handling).
-export function mockGoogleEmail(): string {
-  return `user${Math.floor(Math.random() * 1e6)}@gmail.com`
-}
-
 export const APP_CATALOG: { name: string; icon: string }[] = [
-  { name: '인스타그램', icon: '📷' },
-  { name: '유튜브', icon: '▶️' },
-  { name: '틱톡', icon: '🎵' },
-  { name: '카카오톡', icon: '💬' },
-  { name: '넷플릭스', icon: '🎬' },
-  { name: '게임', icon: '🎮' },
-  { name: '웹툰', icon: '📖' },
-  { name: '문자/전화', icon: '📞' },
-]
+  { name: '인스타그램', icon: '/app-icons/instagram.svg' },
+  { name: '유튜브', icon: '/app-icons/youtube.svg' },
+  { name: '틱톡', icon: '/app-icons/tiktok.svg' },
+  { name: '카카오톡', icon: '/app-icons/kakaotalk.svg' },
+  { name: '넷플릭스', icon: '/app-icons/netflix.svg' },
+  { name: '게임', icon: '/app-icons/game.svg' },
+  { name: '웹툰', icon: '/app-icons/webtoon.svg' },
+  { name: '문자/전화', icon: '/app-icons/phone.svg' },
+].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 
 // Simulates what an OCR pass over a screen-time screenshot would return:
 // a plausible, randomized app-by-app breakdown (whole hours) that sums to

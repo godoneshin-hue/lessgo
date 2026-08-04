@@ -19,7 +19,7 @@ create table if not exists users (
 create table if not exists challenges (
   id text primary key,
   share_code text unique not null,
-  creator_id text not null references users(id),
+  creator_id text not null references users(id) on delete cascade,
   creator_name text not null,
   mode text not null,
   category text,

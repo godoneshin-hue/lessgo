@@ -400,6 +400,14 @@ function TableToolbar({
   )
 }
 
+function signupInfo(u: ApiUser): string {
+  if (u.authProvider === 'phone') return u.phone
+  const id = u.oauthId?.split(':')[1] ?? ''
+  if (u.authProvider === 'google') return u.email || `Google · ${id}`
+  if (u.authProvider === 'kakao') return u.email || `카카오 · ${id}`
+  return ''
+}
+
 function UsersTable({
   users,
   search,
@@ -418,7 +426,7 @@ function UsersTable({
     const q = search.trim().toLowerCase()
     if (!q) return users
     return users.filter((u) =>
-      [u.name, u.school, u.grade, u.phone].some((field) => field.toLowerCase().includes(q)),
+      [u.name, u.school, u.grade, signupInfo(u)].some((field) => field.toLowerCase().includes(q)),
     )
   }, [users, search])
 
@@ -433,7 +441,7 @@ function UsersTable({
               <Th>이름</Th>
               <Th>학교</Th>
               <Th>학년</Th>
-              <Th>전화번호</Th>
+              <Th>가입정보</Th>
               <Th>초대코드</Th>
               <Th>가입일</Th>
               <Th />
@@ -448,7 +456,7 @@ function UsersTable({
                 <Td className="font-semibold text-[#1B2333]">{u.name}</Td>
                 <Td>{u.school}</Td>
                 <Td>{u.grade}</Td>
-                <Td className="tabular-nums">{u.phone}</Td>
+                <Td className="tabular-nums">{signupInfo(u)}</Td>
                 <Td>{u.inviteCode || '—'}</Td>
                 <Td className="tabular-nums text-[#9AA3BD]">{formatDate(u.createdAt)}</Td>
                 <Td>

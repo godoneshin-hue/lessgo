@@ -7,6 +7,7 @@ import { addDays, minutesToLabel, todayISO, weekdayKr } from '../lib/date'
 import { APP_CATALOG, simulateAppBreakdown } from '../state/seed'
 import type { AppUsage } from '../state/types'
 import { CameraIcon, ChevronRightIcon, XIcon } from '../components/icons'
+import AppIcon from '../components/AppIcon'
 
 export default function Verify() {
   const { records, todayRecord, verifyToday, pushToast } = useStore()
@@ -155,8 +156,8 @@ export default function Verify() {
           <ul className="mt-3 divide-y divide-line">
             {apps.map((app, idx) => (
               <li key={app.name} className="flex items-center gap-3 py-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-bg text-lg">
-                  {app.icon}
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-bg text-lg">
+                  <AppIcon icon={app.icon} className="h-6 w-6" />
                 </span>
                 <span className="flex-1 text-sm font-semibold text-ink">{app.name}</span>
                 <div className="flex items-center gap-1.5">
@@ -210,7 +211,7 @@ export default function Verify() {
                   onClick={() => addApp(c)}
                   className="flex flex-col items-center gap-1 rounded-xl bg-surface py-2.5 text-[11px] font-semibold text-ink-soft shadow-card active:scale-95"
                 >
-                  <span className="text-lg">{c.icon}</span>
+                  <AppIcon icon={c.icon} className="h-7 w-7 rounded-lg" />
                   {c.name}
                 </button>
               ))}
@@ -236,8 +237,8 @@ export default function Verify() {
 function AppRow({ app }: { app: AppUsage }) {
   return (
     <li className="flex items-center gap-3 py-2.5">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg text-base">
-        {app.icon}
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-bg text-base">
+        <AppIcon icon={app.icon} className="h-5 w-5" />
       </span>
       <span className="flex-1 text-sm font-semibold text-ink">{app.name}</span>
       <span className="text-sm font-bold tabular-nums text-ink-soft">{minutesToLabel(app.minutes)}</span>
