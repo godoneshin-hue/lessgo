@@ -89,9 +89,16 @@ export default function Verify() {
       }))
       setTotalFromAnalysis(result.totalMinutes)
       setHasAnalyzed(true)
-      if (result.totalMinutes !== null && !result.hasPerAppBreakdown && apps.length > 0) {
-        pushToast('전체 사용시간만 보여요. 앱별 사용시간 화면도 같이 올려주세요.')
-      } else {
+
+      const missingNames = trackedAppNames.filter((name) => !result.apps.some((r) => r.name === name))
+
+      if (result.dateMatches === false) {
+        pushToast('오늘 날짜 스크린샷이 아닌 것 같아요. 오늘 사용 시간이 맞는지 확인해주세요.')
+      }
+      if (missingNames.length > 0) {
+        const list = missingNames.join(', ')
+        pushToast(`${list}이 없어요. ${list}이 포함된 스크린샷을 올려주세요.`)
+      } else if (result.dateMatches !== false) {
         pushToast('사진 분석이 끝났어요.')
       }
     } catch (err) {

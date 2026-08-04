@@ -85,10 +85,13 @@ export function socialAuth(payload: {
 }
 
 export function analyzeScreenTime(userId: string, images: string[], trackedAppNames: string[]) {
-  return request<{ totalMinutes: number | null; apps: { name: string; minutes: number }[]; hasPerAppBreakdown: boolean }>(
-    '/verify/analyze',
-    { method: 'POST', userId, body: JSON.stringify({ images, trackedAppNames }) },
-  )
+  const todayLabel = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
+  return request<{
+    totalMinutes: number | null
+    apps: { name: string; minutes: number }[]
+    hasPerAppBreakdown: boolean
+    dateMatches: boolean | null
+  }>('/verify/analyze', { method: 'POST', userId, body: JSON.stringify({ images, trackedAppNames, todayLabel }) })
 }
 
 export function updateAvatar(userId: string, avatar: string) {

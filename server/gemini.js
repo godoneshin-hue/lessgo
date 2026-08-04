@@ -7,20 +7,21 @@ function parseDataUrl(dataUrl) {
   return { mimeType: match[1], data: match[2] }
 }
 
-export async function analyzeScreenTimeImages(images, trackedAppNames) {
+export async function analyzeScreenTimeImages(images, trackedAppNames, todayLabel) {
   const parts = []
   for (const dataUrl of images) {
     const parsed = parseDataUrl(dataUrl)
     if (parsed) parts.push({ inline_data: { mime_type: parsed.mimeType, data: parsed.data } })
   }
-  if (parts.length === 0) return { totalMinutes: null, apps: [], hasPerAppBreakdown: false }
+  if (parts.length === 0) return { totalMinutes: null, apps: [], hasPerAppBreakdown: false, dateMatches: null }
 
-  const prompt = `아이폰/안드로이드 스크린타임(사용 시간) 설정 화면 스크린샷이야. 이 사용자가 추적 중인 앱 목록: ${trackedAppNames.join(', ')}.
+  const prompt = `아이폰/안드로이드 스크린타임(사용 시간) 설정 화면 스크린샷이야. 오늘 날짜는 ${todayLabel}이고, 이 사용자가 추적 중인 앱 목록: ${trackedAppNames.join(', ')}.
 
 스크린샷에서:
 1. 오늘의 전체 스마트폰 사용 시간 총합(분 단위)이 보이면 totalMinutes에 넣어줘. 안 보이면 null.
 2. 위 추적 앱 목록 중, 스크린샷에 앱별 사용 시간이 따로 나와있는 게 있으면 apps 배열에 넣어줘. 스크린샷엔 앱 이름이 영어(예: Instagram, YouTube, KakaoTalk)로 나올 수 있는데, 반드시 추적 목록에 있는 한국어 이름 그대로 매칭해서 넣어줘 (목록에 없는 앱은 무시). 분 단위 정수로.
 3. 앱별 세부 내역이 화면에 하나라도 있었으면 hasPerAppBreakdown을 true로, 총 사용시간만 있고 앱별 내역이 전혀 없었으면 false로.
+4. 화면에 날짜나 요일이 표시돼 있으면(예: "오늘", "Today", 구체적 날짜, 요일별 그래프에서 선택된 날) 그게 ${todayLabel}과 같은 날인지 dateMatches에 true/false로 넣어줘. 스크린샷에 날짜 정보가 전혀 없어서 판단할 수 없으면 null로 해줘.
 
 반드시 JSON만 응답해.`
 
@@ -41,6 +42,7 @@ export async function analyzeScreenTimeImages(images, trackedAppNames) {
             },
           },
           hasPerAppBreakdown: { type: 'boolean' },
+          dateMatches: { type: 'boolean', nullable: true },
         },
         required: ['apps', 'hasPerAppBreakdown'],
       },
@@ -64,5 +66,6 @@ export async function analyzeScreenTimeImages(images, trackedAppNames) {
     totalMinutes: typeof parsed.totalMinutes === 'number' ? parsed.totalMinutes : null,
     apps: (parsed.apps ?? []).filter((a) => trackedSet.has(a.name)),
     hasPerAppBreakdown: Boolean(parsed.hasPerAppBreakdown),
+    dateMatches: typeof parsed.dateMatches === 'boolean' ? parsed.dateMatches : null,
   }
 }

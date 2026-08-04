@@ -12,7 +12,7 @@ verifyRouter.post(
     const user = userId && (await db.findUserById(userId))
     if (!user) return res.status(401).json({ error: '로그인이 필요해요.' })
 
-    const { images, trackedAppNames } = req.body ?? {}
+    const { images, trackedAppNames, todayLabel } = req.body ?? {}
     if (!Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ error: '분석할 사진이 없어요.' })
     }
@@ -24,7 +24,11 @@ verifyRouter.post(
     }
 
     try {
-      const result = await analyzeScreenTimeImages(images, trackedAppNames)
+      const result = await analyzeScreenTimeImages(
+        images,
+        trackedAppNames,
+        typeof todayLabel === 'string' ? todayLabel : new Date().toISOString().slice(0, 10),
+      )
       res.json(result)
     } catch (err) {
       console.error('analyzeScreenTimeImages failed:', err)
