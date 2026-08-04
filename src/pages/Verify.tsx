@@ -14,7 +14,7 @@ import AppIcon from '../components/AppIcon'
 const MAX_IMAGES = 10
 
 export default function Verify() {
-  const { profile, records, todayRecord, verifyToday, pushToast } = useStore()
+  const { profile, records, todayRecord, verifyToday, unverifyToday, pushToast } = useStore()
   const { personalChallenge, loading } = usePersonalChallenge()
   const [apps, setApps] = useState<AppUsage[]>([])
   const [seeded, setSeeded] = useState(false)
@@ -114,6 +114,15 @@ export default function Verify() {
     pushToast(success ? '인증 완료! 오늘 목표를 달성했어요 🎉' : '인증 완료! 오늘은 목표를 조금 넘었어요')
   }
 
+  function handleCancelVerification() {
+    unverifyToday()
+    setImages([])
+    setTotalFromAnalysis(null)
+    setHasAnalyzed(false)
+    setApps((prev) => prev.map((a) => ({ ...a, minutes: 0 })))
+    pushToast('인증을 취소했어요. 다시 인증해주세요.')
+  }
+
   if (todayRecord.verified) {
     const success = isSuccess(todayRecord, threshold)
     return (
@@ -155,6 +164,10 @@ export default function Verify() {
         <Link to="/stats" className="mt-6 flex items-center gap-1 text-sm font-bold text-primary-ink">
           전체 기록 보기 <ChevronRightIcon className="h-4 w-4" />
         </Link>
+
+        <button type="button" onClick={handleCancelVerification} className="mt-3 text-xs font-semibold text-ink-faint hover:text-warn-text">
+          인증 취소하기
+        </button>
       </div>
     )
   }

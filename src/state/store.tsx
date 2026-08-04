@@ -53,6 +53,7 @@ interface StoreValue {
   records: DayRecord[]
   todayRecord: DayRecord
   verifyToday: (usedMinutes: number, apps?: DayRecord['apps']) => void
+  unverifyToday: () => void
   toasts: Toast[]
   pushToast: (message: string) => void
 }
@@ -148,6 +149,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  function unverifyToday() {
+    setRecords((prev) => {
+      const others = prev.filter((r) => r.date !== today)
+      return [...others, { date: today, usedMinutes: null, verified: false }]
+    })
+  }
+
   const value: StoreValue = {
     isAuthenticated,
     profile,
@@ -161,6 +169,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     records,
     todayRecord,
     verifyToday,
+    unverifyToday,
     toasts,
     pushToast,
   }
