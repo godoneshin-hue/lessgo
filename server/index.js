@@ -5,6 +5,7 @@ import { authRouter } from './routes/auth.js'
 import { challengesRouter } from './routes/challenges.js'
 import { adminRouter } from './routes/admin.js'
 import { verifyRouter } from './routes/verify.js'
+import { verificationsRouter } from './routes/verifications.js'
 import { db } from './db.js'
 import { requireAdminPassword } from './adminAuth.js'
 
@@ -26,6 +27,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/challenges', challengesRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api/verify', verifyRouter)
+app.use('/api/verifications', verificationsRouter)
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 

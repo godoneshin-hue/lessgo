@@ -68,6 +68,19 @@ function rowToLog(row) {
   }
 }
 
+function rowToVerification(row) {
+  if (!row) return null
+  return {
+    id: row.id,
+    userId: row.user_id,
+    userName: row.user_name ?? undefined,
+    date: row.date,
+    usedMinutes: row.used_minutes,
+    apps: row.apps ?? [],
+    createdAt: row.created_at.toISOString(),
+  }
+}
+
 export const db = {
   async getUsers() {
     const { rows } = await pool.query('select * from users order by created_at desc')
@@ -231,5 +244,43 @@ export const db = {
       `insert into logs (id, type, message, meta, created_at) values ($1,$2,$3,$4,$5)`,
       [entry.id, entry.type, entry.message, JSON.stringify(entry.meta ?? {}), entry.createdAt],
     )
+  },
+
+  async findVerification(userId, date) {
+    const { rows } = await pool.query('select * from verifications where user_id = $1 and date = $2', [userId, date])
+    return rowToVerification(rows[0])
+  },
+  // Only the day's own owner ever calls this (submitting today's proof) —
+  // upsert on (user_id, date) so a retry can't create duplicate rows for
+  // the same day.
+  async upsertVerification(v) {
+    const { rows } = await pool.query(
+      `insert into verifications (id, user_id, date, used_minutes, apps, created_at)
+       values ($1,$2,$3,$4,$5,$6)
+       on conflict (user_id, date) do update set used_minutes = $4, apps = $5
+       returning *`,
+      [v.id, v.userId, v.date, v.usedMinutes, JSON.stringify(v.apps ?? []), v.createdAt],
+    )
+    return rowToVerification(rows[0])
+  },
+  // Deleting a verification is an admin-only action (see admin.js) — there
+  // is deliberately no user-facing "cancel my verification" endpoint, so a
+  // failed day can't be quietly erased by the person it's about.
+  async deleteVerification(id) {
+    const { rowCount } = await pool.query('delete from verifications where id = $1', [id])
+    return rowCount > 0
+  },
+  async getVerifications(userId) {
+    const { rows } = await pool.query('select * from verifications where user_id = $1 order by date desc', [userId])
+    return rows.map(rowToVerification)
+  },
+  async getAllVerifications() {
+    const { rows } = await pool.query(
+      `select v.*, u.name as user_name from verifications v
+       join users u on u.id = v.user_id
+       order by v.date desc, v.created_at desc
+       limit 500`,
+    )
+    return rows.map(rowToVerification)
   },
 }

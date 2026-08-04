@@ -33,6 +33,21 @@ export default function Verify() {
     setSeeded(true)
   }, [personalChallenge, seeded])
 
+  // The server is the source of truth for "is today verified" — cancelling
+  // is admin-only (no user-facing route for it), so if an admin deleted
+  // today's record, this brings the local copy back in sync instead of the
+  // device going on showing a stale "verified" state forever.
+  useEffect(() => {
+    if (!profile.id || !todayRecord.verified) return
+    api
+      .getVerification(profile.id, today)
+      .then(({ verification }) => {
+        if (!verification) unverifyToday()
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.id, today])
+
   if (loading) {
     return <p className="px-5 py-10 text-center text-sm text-ink-faint">불러오는 중…</p>
   }
@@ -108,19 +123,15 @@ export default function Verify() {
     }
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     verifyToday(total, apps)
     const success = total <= threshold.dailyLimitMinutes
     pushToast(success ? '인증 완료! 오늘 목표를 달성했어요 🎉' : '인증 완료! 오늘은 목표를 조금 넘었어요')
-  }
-
-  function handleCancelVerification() {
-    unverifyToday()
-    setImages([])
-    setTotalFromAnalysis(null)
-    setHasAnalyzed(false)
-    setApps((prev) => prev.map((a) => ({ ...a, minutes: 0 })))
-    pushToast('인증을 취소했어요. 다시 인증해주세요.')
+    if (profile.id) {
+      // Fire-and-forget: the local record is what drives the UI immediately;
+      // the server copy exists so admin can audit/delete it later.
+      api.submitVerification(profile.id, today, total, apps).catch(() => {})
+    }
   }
 
   if (todayRecord.verified) {
@@ -164,10 +175,6 @@ export default function Verify() {
         <Link to="/stats" className="mt-6 flex items-center gap-1 text-sm font-bold text-primary-ink">
           전체 기록 보기 <ChevronRightIcon className="h-4 w-4" />
         </Link>
-
-        <button type="button" onClick={handleCancelVerification} className="mt-3 text-xs font-semibold text-ink-faint hover:text-warn-text">
-          인증 취소하기
-        </button>
       </div>
     )
   }

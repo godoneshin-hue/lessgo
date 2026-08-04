@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import * as api from '../lib/api'
-import type { ApiChallenge, ApiLog, ApiUser } from '../lib/api'
+import type { ApiChallenge, ApiLog, ApiUser, ApiVerification } from '../lib/api'
 import Avatar from '../components/Avatar'
+import AppIcon from '../components/AppIcon'
 import { pickAvatarEmoji } from '../state/seed'
 import { minutesToLabel } from '../lib/date'
 
 type Section = 'overview' | 'data' | 'logs'
-type Entity = 'users' | 'challenges' | null
+type Entity = 'users' | 'challenges' | 'verifications' | null
 
 const CATEGORY_LABEL: Record<string, string> = {
   friends: '친구 대결',
@@ -29,21 +30,23 @@ export default function Admin() {
   const [users, setUsers] = useState<ApiUser[] | null>(null)
   const [challenges, setChallenges] = useState<ApiChallenge[] | null>(null)
   const [logs, setLogs] = useState<ApiLog[] | null>(null)
+  const [verifications, setVerifications] = useState<ApiVerification[] | null>(null)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
-  const [confirmTarget, setConfirmTarget] = useState<{ kind: 'user' | 'challenge'; id: string; label: string } | null>(
-    null,
-  )
+  const [confirmTarget, setConfirmTarget] = useState<
+    { kind: 'user' | 'challenge' | 'verification'; id: string; label: string } | null
+  >(null)
   const [unlocked, setUnlocked] = useState(false)
   const [pwInput, setPwInput] = useState('')
   const [pwError, setPwError] = useState('')
 
   function loadAll() {
-    Promise.all([api.adminGetUsers(), api.adminGetChallenges(), api.adminGetLogs()])
-      .then(([u, c, l]) => {
+    Promise.all([api.adminGetUsers(), api.adminGetChallenges(), api.adminGetLogs(), api.adminGetVerifications()])
+      .then(([u, c, l, v]) => {
         setUsers(u.users)
         setChallenges(c.challenges)
         setLogs(l.logs)
+        setVerifications(v.verifications)
         setError('')
       })
       .catch((err) => {
@@ -103,7 +106,8 @@ export default function Admin() {
     if (!confirmTarget) return
     try {
       if (confirmTarget.kind === 'user') await api.adminDeleteUser(confirmTarget.id)
-      else await api.adminDeleteChallenge(confirmTarget.id)
+      else if (confirmTarget.kind === 'challenge') await api.adminDeleteChallenge(confirmTarget.id)
+      else await api.adminDeleteVerification(confirmTarget.id)
       setConfirmTarget(null)
       loadAll()
     } catch {
@@ -139,6 +143,7 @@ export default function Admin() {
           <DataHome
             userCount={users?.length}
             challengeCount={challenges?.length}
+            verificationCount={verifications?.length}
             onOpen={(e) => {
               setEntity(e)
               setSearch('')
@@ -166,6 +171,16 @@ export default function Admin() {
           />
         )}
 
+        {section === 'data' && entity === 'verifications' && (
+          <VerificationsTable
+            verifications={verifications}
+            search={search}
+            onSearch={setSearch}
+            onBack={() => setEntity(null)}
+            onDelete={(v) => setConfirmTarget({ kind: 'verification', id: v.id, label: `${v.userName ?? v.userId} · ${v.date}` })}
+          />
+        )}
+
         {section === 'logs' && <LogsView logs={logs} />}
       </main>
 
@@ -174,7 +189,9 @@ export default function Admin() {
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <p className="text-base font-bold text-[#1B2333]">정말 삭제할까요?</p>
             <p className="mt-1 text-sm text-[#6B7690]">
-              "{confirmTarget.label}" {confirmTarget.kind === 'user' ? '계정을' : '챌린지를'} 영구적으로 삭제해요.
+              "{confirmTarget.label}"{' '}
+              {confirmTarget.kind === 'user' ? '계정을' : confirmTarget.kind === 'challenge' ? '챌린지를' : '인증 기록을'}{' '}
+              영구적으로 삭제해요.
             </p>
             <div className="mt-5 flex gap-2">
               <button
@@ -311,11 +328,13 @@ function StatTile({ label, value, accent }: { label: string; value: string; acce
 function DataHome({
   userCount,
   challengeCount,
+  verificationCount,
   onOpen,
 }: {
   userCount?: number
   challengeCount?: number
-  onOpen: (e: 'users' | 'challenges') => void
+  verificationCount?: number
+  onOpen: (e: 'users' | 'challenges' | 'verifications') => void
 }) {
   return (
     <div>
@@ -336,6 +355,13 @@ function DataHome({
           count={challengeCount}
           description="생성된 챌린지 · 참여자, 목표, 내기 금액"
           onClick={() => onOpen('challenges')}
+        />
+        <EntityCard
+          icon="✅"
+          name="Verifications"
+          count={verificationCount}
+          description="일일 인증 기록 · 취소는 여기서만 가능해요"
+          onClick={() => onOpen('verifications')}
         />
       </div>
     </div>
@@ -556,6 +582,82 @@ function ChallengesTable({
             {challenges !== null && filtered.length === 0 && (
               <tr>
                 <td colSpan={10} className="px-4 py-8 text-center text-[#9AA3BD]">
+                  결과가 없어요.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function VerificationsTable({
+  verifications,
+  search,
+  onSearch,
+  onBack,
+  onDelete,
+}: {
+  verifications: ApiVerification[] | null
+  search: string
+  onSearch: (v: string) => void
+  onBack: () => void
+  onDelete: (v: ApiVerification) => void
+}) {
+  const filtered = useMemo(() => {
+    if (!verifications) return []
+    const q = search.trim().toLowerCase()
+    if (!q) return verifications
+    return verifications.filter((v) => [v.userName ?? '', v.date].some((f) => f.toLowerCase().includes(q)))
+  }, [verifications, search])
+
+  return (
+    <div>
+      <TableToolbar onBack={onBack} search={search} onSearch={onSearch} label="Verifications" />
+      <div className="overflow-x-auto rounded-2xl border border-[#E2E6F0] bg-white">
+        <table className="w-full min-w-[640px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-[#E2E6F0] text-left text-xs uppercase tracking-wide text-[#9AA3BD]">
+              <Th>사용자</Th>
+              <Th>날짜</Th>
+              <Th>사용 시간</Th>
+              <Th>앱</Th>
+              <Th />
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((v) => (
+              <tr key={v.id} className="border-b border-[#F0F2F8] last:border-0 hover:bg-[#FAFBFD]">
+                <Td className="font-semibold text-[#1B2333]">{v.userName ?? v.userId}</Td>
+                <Td className="tabular-nums">{v.date}</Td>
+                <Td className="tabular-nums">{minutesToLabel(v.usedMinutes)}</Td>
+                <Td>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {v.apps.length === 0 && <span className="text-[#9AA3BD]">—</span>}
+                    {v.apps.map((a) => (
+                      <span key={a.name} className="flex items-center gap-1 rounded-full bg-[#F3F5FA] px-2 py-1 text-xs">
+                        <AppIcon icon={a.icon} className="h-3.5 w-3.5" />
+                        {a.name} {minutesToLabel(a.minutes)}
+                      </span>
+                    ))}
+                  </div>
+                </Td>
+                <Td>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(v)}
+                    className="rounded-lg px-2 py-1 text-xs font-bold text-red-500 hover:bg-red-50"
+                  >
+                    삭제
+                  </button>
+                </Td>
+              </tr>
+            ))}
+            {verifications !== null && filtered.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-[#9AA3BD]">
                   결과가 없어요.
                 </td>
               </tr>

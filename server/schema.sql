@@ -52,5 +52,16 @@ create table if not exists logs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists verifications (
+  id text primary key,
+  user_id text not null references users(id) on delete cascade,
+  date date not null,
+  used_minutes int not null,
+  apps jsonb not null default '[]',
+  created_at timestamptz not null default now(),
+  unique(user_id, date)
+);
+
 create index if not exists idx_challenges_creator on challenges(creator_id);
 create index if not exists idx_logs_created_at on logs(created_at desc);
+create index if not exists idx_verifications_user on verifications(user_id);

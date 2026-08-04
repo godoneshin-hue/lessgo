@@ -54,3 +54,22 @@ adminRouter.get(
     res.json({ logs: await db.getLogs() })
   }),
 )
+
+adminRouter.get(
+  '/verifications',
+  asyncHandler(async (_req, res) => {
+    res.json({ verifications: await db.getAllVerifications() })
+  }),
+)
+
+// Deliberately admin-only — see db.deleteVerification for why there is no
+// equivalent user-facing route.
+adminRouter.delete(
+  '/verifications/:id',
+  asyncHandler(async (req, res) => {
+    const ok = await db.deleteVerification(req.params.id)
+    if (!ok) return res.status(404).json({ error: '인증 기록을 찾을 수 없어요.' })
+    logEvent('admin.delete_verification', `관리자가 인증 기록을 삭제했어요`, { verificationId: req.params.id })
+    res.json({ ok: true })
+  }),
+)

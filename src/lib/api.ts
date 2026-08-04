@@ -248,3 +248,33 @@ export interface ApiLog {
 export function adminGetLogs() {
   return request<{ logs: ApiLog[] }>('/admin/logs')
 }
+
+export interface ApiVerification {
+  id: string
+  userId: string
+  userName?: string
+  date: string
+  usedMinutes: number
+  apps: ApiAppLimit[]
+  createdAt: string
+}
+
+export function getVerification(userId: string, date: string) {
+  return request<{ verification: ApiVerification | null }>(`/verifications/${date}`, { userId })
+}
+
+export function submitVerification(userId: string, date: string, usedMinutes: number, apps: ApiAppLimit[]) {
+  return request<{ verification: ApiVerification }>('/verifications', {
+    method: 'POST',
+    userId,
+    body: JSON.stringify({ date, usedMinutes, apps }),
+  })
+}
+
+export function adminGetVerifications() {
+  return request<{ verifications: ApiVerification[] }>('/admin/verifications')
+}
+
+export function adminDeleteVerification(id: string) {
+  return request<{ ok: true }>(`/admin/verifications/${id}`, { method: 'DELETE' })
+}
