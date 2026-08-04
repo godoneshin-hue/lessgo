@@ -6,6 +6,7 @@ import { ApiError } from '../lib/api'
 import { APP_CATALOG, customAppEntry } from '../state/seed'
 import { ChevronRightIcon, XIcon } from '../components/icons'
 import AppIcon from '../components/AppIcon'
+import ChallengeAppearancePicker from '../components/ChallengeAppearancePicker'
 
 const PERIOD_OPTIONS = [1, 3, 5, 7, 14, 30]
 const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -23,6 +24,9 @@ export default function ChallengeNew() {
   const [mode, setMode] = useState<'solo' | 'group' | null>(null)
   const [title, setTitle] = useState('')
   const [goalHours, setGoalHours] = useState(3)
+  const [photo, setPhoto] = useState('')
+  const [background, setBackground] = useState('')
+  const [memo, setMemo] = useState('')
 
   const [appLimits, setAppLimits] = useState<AppLimitRow[]>([])
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -117,6 +121,9 @@ export default function ChallengeNew() {
         donationPeriod,
         verifyByHour,
         appLimits: appLimits.map((a) => ({ name: a.name, icon: a.icon, minutes: a.minutes })),
+        photo: photo || null,
+        background: background || null,
+        memo: memo.trim() || null,
       })
       pushToast('챌린지를 만들었어요')
       navigate(`/challenges/${challenge.id}`)
@@ -155,6 +162,17 @@ export default function ChallengeNew() {
 
         {mode && (
           <>
+            <Section title="챌린지 꾸미기">
+              <ChallengeAppearancePicker
+                photo={photo}
+                onPhoto={setPhoto}
+                background={background}
+                onBackground={setBackground}
+                memo={memo}
+                onMemo={setMemo}
+              />
+            </Section>
+
             <Section title="챌린지 이름">
               <input
                 value={title}

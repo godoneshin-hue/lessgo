@@ -50,6 +50,10 @@ function rowToChallenge(row) {
     appLimits: row.app_limits ?? [],
     participants: row.participants ?? [],
     teams: row.teams ?? null,
+    photo: row.photo ?? null,
+    background: row.background ?? null,
+    memo: row.memo ?? null,
+    pendingEdit: row.pending_edit ?? null,
     createdAt: row.created_at.toISOString(),
   }
 }
@@ -136,8 +140,8 @@ export const db = {
       `insert into challenges (
          id, share_code, creator_id, creator_name, mode, category, title, goal_minutes, period_days,
          start_date, end_date, max_participants, open_enrollment, stake_type, donation_amount,
-         donation_period, verify_by_hour, app_limits, participants, teams, created_at
-       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+         donation_period, verify_by_hour, app_limits, participants, teams, photo, background, memo, created_at
+       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
        returning *`,
       [
         challenge.id,
@@ -160,17 +164,56 @@ export const db = {
         JSON.stringify(challenge.appLimits ?? []),
         JSON.stringify(challenge.participants ?? []),
         challenge.teams ? JSON.stringify(challenge.teams) : null,
+        challenge.photo || null,
+        challenge.background || null,
+        challenge.memo || null,
         challenge.createdAt,
       ],
     )
     return rowToChallenge(rows[0])
   },
   async updateChallenge(id, patch) {
-    // Only `participants` is ever patched today (join flow) — keep this
+    // Only `participants` is ever patched here (join flow) — keep this
     // narrow and explicit rather than building a generic dynamic SET.
     const { rows } = await pool.query(
       `update challenges set participants = $2 where id = $1 returning *`,
       [id, JSON.stringify(patch.participants ?? [])],
+    )
+    return rowToChallenge(rows[0])
+  },
+  async updateChallengeInfo(id, patch) {
+    const current = await this.findChallengeById(id)
+    if (!current) return null
+    const merged = { ...current, ...patch }
+    const { rows } = await pool.query(
+      `update challenges set
+         title = $2, goal_minutes = $3, period_days = $4, start_date = $5, end_date = $6,
+         app_limits = $7, stake_type = $8, donation_amount = $9, donation_period = $10,
+         verify_by_hour = $11, photo = $12, background = $13, memo = $14
+       where id = $1 returning *`,
+      [
+        id,
+        merged.title,
+        merged.goalMinutes,
+        merged.periodDays,
+        merged.startDate,
+        merged.endDate,
+        JSON.stringify(merged.appLimits ?? []),
+        merged.stakeType,
+        merged.donationAmount,
+        merged.donationPeriod,
+        merged.verifyByHour,
+        merged.photo || null,
+        merged.background || null,
+        merged.memo || null,
+      ],
+    )
+    return rowToChallenge(rows[0])
+  },
+  async setPendingEdit(id, pendingEdit) {
+    const { rows } = await pool.query(
+      `update challenges set pending_edit = $2 where id = $1 returning *`,
+      [id, pendingEdit ? JSON.stringify(pendingEdit) : null],
     )
     return rowToChallenge(rows[0])
   },

@@ -37,6 +37,10 @@ create table if not exists challenges (
   app_limits jsonb not null default '[]',
   participants jsonb not null default '[]',
   teams jsonb,
+  photo text,
+  background text,
+  memo text,
+  pending_edit jsonb,
   created_at timestamptz not null default now()
 );
 

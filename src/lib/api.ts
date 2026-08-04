@@ -141,6 +141,23 @@ export interface ApiChallenge {
   appLimits: ApiAppLimit[]
   participants: ApiParticipant[]
   teams: ApiTeam[] | null
+  photo: string | null
+  background: string | null
+  memo: string | null
+  pendingEdit: ApiPendingEdit | null
+  createdAt: string
+}
+
+export interface ApiPendingEdit {
+  patch: Partial<
+    Pick<
+      ApiChallenge,
+      'title' | 'goalMinutes' | 'periodDays' | 'startDate' | 'endDate' | 'appLimits' | 'stakeType' | 'donationAmount' | 'donationPeriod' | 'verifyByHour' | 'photo' | 'background' | 'memo'
+    >
+  >
+  proposedBy: string
+  proposedByName: string
+  approvedBy: string[]
   createdAt: string
 }
 
@@ -169,9 +186,28 @@ export function createChallenge(
     donationPeriod: 'day' | 'week'
     verifyByHour: number
     appLimits: ApiAppLimit[]
+    photo?: string | null
+    background?: string | null
+    memo?: string | null
   },
 ) {
   return request<{ challenge: ApiChallenge }>('/challenges', { method: 'POST', userId, body: JSON.stringify(payload) })
+}
+
+export function updateChallenge(userId: string, id: string, patch: ApiPendingEdit['patch']) {
+  return request<{ challenge: ApiChallenge }>(`/challenges/${id}`, {
+    method: 'PATCH',
+    userId,
+    body: JSON.stringify(patch),
+  })
+}
+
+export function approveChallengeEdit(userId: string, id: string) {
+  return request<{ challenge: ApiChallenge }>(`/challenges/${id}/pending-edit/approve`, { method: 'POST', userId })
+}
+
+export function rejectChallengeEdit(userId: string, id: string) {
+  return request<{ challenge: ApiChallenge }>(`/challenges/${id}/pending-edit/reject`, { method: 'POST', userId })
 }
 
 export function joinChallenge(userId: string, target: { code?: string; challengeId?: string }) {
