@@ -23,16 +23,11 @@ verifyRouter.post(
       return res.status(400).json({ error: '추적 중인 앱 목록이 필요해요.' })
     }
 
-    try {
-      const result = await analyzeScreenTimeImages(
-        images,
-        trackedAppNames,
-        typeof todayLabel === 'string' ? todayLabel : new Date().toISOString().slice(0, 10),
-      )
-      res.json(result)
-    } catch (err) {
-      console.error('analyzeScreenTimeImages failed:', err)
-      res.status(500).json({ error: '사진을 분석하지 못했어요.', debug: String(err?.message ?? err) })
-    }
+    const result = await analyzeScreenTimeImages(
+      images,
+      trackedAppNames,
+      typeof todayLabel === 'string' ? todayLabel : new Date().toISOString().slice(0, 10),
+    )
+    res.json(result)
   }),
 )
