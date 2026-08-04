@@ -32,7 +32,12 @@ app.use('/api/verifications', verificationsRouter)
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
 app.get('/', requireAdminPassword, async (_req, res) => {
-  const [users, challenges, logs] = await Promise.all([db.getUsers(), db.getChallenges(), db.getLogs()])
+  const [users, challenges, logs, verifications] = await Promise.all([
+    db.getUsers(),
+    db.getChallenges(),
+    db.getLogs(),
+    db.getAllVerifications(),
+  ])
   const uptimeMin = Math.floor(process.uptime() / 60)
 
   res.type('html').send(`
@@ -41,7 +46,7 @@ app.get('/', requireAdminPassword, async (_req, res) => {
     <title>LessGo API</title>
     <style>
       body { font-family: system-ui, sans-serif; max-width: 64rem; margin: 3rem auto; padding: 0 1.5rem; line-height: 1.6; color: #1a1a1a; }
-      .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0 2.5rem; }
+      .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0 2.5rem; }
       .stat { background: #f4f4f5; border-radius: 12px; padding: 1rem; text-align: center; }
       .stat b { display: block; font-size: 1.8rem; }
       .stat span { font-size: 0.85rem; color: #666; }
@@ -58,6 +63,7 @@ app.get('/', requireAdminPassword, async (_req, res) => {
       <div class="stats">
         <div class="stat"><b>${users.length}</b><span>가입자</span></div>
         <div class="stat"><b>${challenges.length}</b><span>챌린지</span></div>
+        <div class="stat"><b>${verifications.length}</b><span>인증 기록</span></div>
         <div class="stat"><b>${logs.length}</b><span>최근 로그</span></div>
       </div>
 
@@ -93,6 +99,24 @@ app.get('/', requireAdminPassword, async (_req, res) => {
                 escapeHtml(c.goalMinutes),
                 escapeHtml(c.participants?.length ?? 0),
                 escapeHtml(new Date(c.createdAt).toLocaleString('ko-KR')),
+              ]),
+            )
+            .join('')}
+        </table></div>
+      </section>
+
+      <section>
+        <h2>인증 기록 (${verifications.length})</h2>
+        <div class="wrap"><table>
+          <tr><th>사용자</th><th>날짜</th><th>사용 시간</th><th>앱</th></tr>
+          ${verifications
+            .slice(0, 200)
+            .map((v) =>
+              row([
+                escapeHtml(v.userName ?? v.userId),
+                escapeHtml(v.date),
+                escapeHtml(`${v.usedMinutes}분`),
+                escapeHtml(v.apps.map((a) => `${a.name} ${a.minutes}분`).join(', ') || '—'),
               ]),
             )
             .join('')}
