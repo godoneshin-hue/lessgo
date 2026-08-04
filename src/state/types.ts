@@ -16,7 +16,7 @@ export interface Profile {
   name: string
   school: string
   grade: string
-  authProvider: 'phone' | 'google'
+  authProvider: 'phone' | 'google' | 'kakao'
   phone: string
   email: string
   inviteCode: string

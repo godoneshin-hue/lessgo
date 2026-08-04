@@ -41,6 +41,11 @@ interface StoreValue {
     avatar: string
   }) => Promise<void>
   login: (phone: string, password: string) => Promise<void>
+  socialAuth: (
+    provider: 'google' | 'kakao',
+    token: string,
+    profileInput?: { name: string; school: string; grade: string; inviteCode: string; avatar: string },
+  ) => Promise<{ needsProfile: true } | { needsProfile: false }>
   logout: () => void
   updateAvatar: (avatar: string) => Promise<void>
   justAuthenticated: boolean
@@ -102,6 +107,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     pushToast('다시 만나서 반가워요')
   }
 
+  async function socialAuth(
+    provider: 'google' | 'kakao',
+    token: string,
+    profileInput?: { name: string; school: string; grade: string; inviteCode: string; avatar: string },
+  ) {
+    const result = await api.socialAuth({ provider, token, ...profileInput })
+    if ('needsProfile' in result) return { needsProfile: true as const }
+
+    setProfile(toProfile(result.user))
+    if (result.isNew) {
+      // Same rule as phone signup: a brand-new account starts with a
+      // completely clean slate, not whatever this browser had cached.
+      setRecords(buildEmptyRecords())
+    }
+    setIsAuthenticated(true)
+    setJustAuthenticated(true)
+    pushToast(result.isNew ? `${result.user.name}님, LessGo에 오신 걸 환영해요` : '다시 만나서 반가워요')
+    return { needsProfile: false as const }
+  }
+
   function logout() {
     setIsAuthenticated(false)
   }
@@ -128,6 +153,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     profile,
     signup,
     login,
+    socialAuth,
     logout,
     updateAvatar,
     justAuthenticated,

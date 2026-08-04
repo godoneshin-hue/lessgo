@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useGoogleLogin } from '@react-oauth/google'
 import { useStore } from '../state/store'
 import { ApiError } from '../lib/api'
 import { formatPhone } from '../lib/phone'
 import { fileToAvatarDataUrl } from '../lib/image'
-import { mockGoogleEmail, pickAvatarEmoji } from '../state/seed'
+import { kakaoLogin } from '../lib/kakao'
+import { pickAvatarEmoji } from '../state/seed'
 import Avatar from '../components/Avatar'
-import { CameraIcon, ChevronRightIcon, GoogleIcon } from '../components/icons'
+import { CameraIcon, ChevronRightIcon, GoogleIcon, KakaoIcon } from '../components/icons'
 
 const SCHOOL_LEVELS = [
   { label: '중학생', full: '중학교' },
@@ -15,14 +17,16 @@ const SCHOOL_LEVELS = [
 const GRADE_NUMS = [1, 2, 3]
 
 type Step = 'method' | 'credentials' | 'profile'
+type SocialProvider = 'google' | 'kakao'
 
 export default function Signup() {
   const navigate = useNavigate()
-  const { signup, pushToast } = useStore()
+  const { signup, socialAuth, pushToast } = useStore()
 
   const [step, setStep] = useState<Step>('method')
-  const [authProvider, setAuthProvider] = useState<'phone' | 'google' | null>(null)
-  const [googleEmail, setGoogleEmail] = useState('')
+  const [authProvider, setAuthProvider] = useState<'phone' | SocialProvider | null>(null)
+  const [socialToken, setSocialToken] = useState('')
+  const [socialBusy, setSocialBusy] = useState(false)
 
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
@@ -41,11 +45,40 @@ export default function Signup() {
   const canSubmitCredentials = phone.replace(/\D/g, '').length >= 10 && password.trim().length > 0
   const canSubmitProfile = name.trim().length > 0 && school.trim().length > 0 && grade.length > 0 && !submitting
 
-  function chooseGoogle() {
-    setAuthProvider('google')
-    setGoogleEmail(mockGoogleEmail())
-    setStep('profile')
-    pushToast('Google 인증이 완료됐어요')
+  async function chooseSocial(provider: SocialProvider, token: string) {
+    setAuthProvider(provider)
+    setSocialToken(token)
+    setSocialBusy(true)
+    try {
+      const result = await socialAuth(provider, token)
+      if (result.needsProfile) {
+        setStep('profile')
+        pushToast(`${provider === 'google' ? 'Google' : '카카오'} 인증이 완료됐어요`)
+      } else {
+        // Token already belongs to an existing account — this is really a
+        // login, not a signup, so just take them straight in.
+        navigate('/home')
+      }
+    } catch (err) {
+      pushToast(err instanceof ApiError ? err.message : '인증에 실패했어요.')
+    } finally {
+      setSocialBusy(false)
+    }
+  }
+
+  const googleLogin = useGoogleLogin({
+    flow: 'implicit',
+    onSuccess: (res) => chooseSocial('google', res.access_token),
+    onError: () => pushToast('구글 인증에 실패했어요.'),
+  })
+
+  async function chooseKakao() {
+    try {
+      const token = await kakaoLogin()
+      await chooseSocial('kakao', token)
+    } catch {
+      pushToast('카카오 인증에 실패했어요.')
+    }
   }
 
   function choosePhone() {
@@ -75,11 +108,18 @@ export default function Signup() {
     setError('')
     setSubmitting(true)
     try {
-      await signup(
-        authProvider === 'google'
-          ? { authProvider: 'google', name: name.trim(), school: school.trim(), grade, email: googleEmail, inviteCode: inviteCode.trim(), avatar }
-          : { authProvider: 'phone', name: name.trim(), school: school.trim(), grade, phone, password, inviteCode: inviteCode.trim(), avatar },
-      )
+      if (authProvider === 'google' || authProvider === 'kakao') {
+        const result = await socialAuth(authProvider, socialToken, {
+          name: name.trim(),
+          school: school.trim(),
+          grade,
+          inviteCode: inviteCode.trim(),
+          avatar,
+        })
+        if (result.needsProfile) throw new ApiError('인증이 만료됐어요. 다시 시도해주세요.')
+      } else {
+        await signup({ authProvider: 'phone', name: name.trim(), school: school.trim(), grade, phone, password, inviteCode: inviteCode.trim(), avatar })
+      }
       navigate('/home')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '가입에 실패했어요. 다시 시도해주세요.')
@@ -90,7 +130,7 @@ export default function Signup() {
 
   function goBack() {
     if (step === 'profile') {
-      setStep(authProvider === 'google' ? 'method' : 'credentials')
+      setStep(authProvider === 'phone' ? 'credentials' : 'method')
     } else if (step === 'credentials') {
       setStep('method')
     } else {
@@ -122,11 +162,21 @@ export default function Signup() {
         <div className="flex flex-1 flex-col gap-3 px-6 pb-8 pt-6">
           <button
             type="button"
-            onClick={chooseGoogle}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-line bg-surface py-3.5 text-sm font-bold text-ink"
+            disabled={socialBusy}
+            onClick={() => googleLogin()}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-line bg-surface py-3.5 text-sm font-bold text-ink disabled:opacity-60"
           >
             <GoogleIcon className="h-[18px] w-[18px]" />
             Google로 계속하기
+          </button>
+          <button
+            type="button"
+            disabled={socialBusy}
+            onClick={chooseKakao}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-[#FEE500] py-3.5 text-sm font-bold text-[#3C1E1E] disabled:opacity-60"
+          >
+            <KakaoIcon className="h-[18px] w-[18px]" />
+            카카오로 계속하기
           </button>
           <button
             type="button"
@@ -188,9 +238,9 @@ export default function Signup() {
           </div>
           <p className="-mt-2 text-center text-xs text-ink-faint">프로필 사진 (선택)</p>
 
-          {authProvider === 'google' && (
+          {(authProvider === 'google' || authProvider === 'kakao') && (
             <p className="-mt-1 rounded-xl bg-primary-tint px-3 py-2 text-center text-xs font-semibold text-primary-ink">
-              {googleEmail} 계정으로 가입해요
+              {authProvider === 'google' ? 'Google' : '카카오'} 계정으로 가입해요
             </p>
           )}
 

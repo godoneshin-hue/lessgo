@@ -12,6 +12,27 @@ function toPublicUser(user) {
   return publicUser
 }
 
+// Never trust a client-supplied identity — always ask the provider's own
+// servers to confirm the access token is real (and get who it belongs to)
+// before it can create/unlock an account.
+async function verifySocialToken(provider, token) {
+  if (provider === 'google') {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return { oauthId: `google:${data.sub}`, email: data.email ?? null }
+  }
+  if (provider === 'kakao') {
+    const res = await fetch('https://kapi.kakao.com/v2/user/me', { headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) return null
+    const data = await res.json()
+    return { oauthId: `kakao:${data.id}`, email: data.kakao_account?.email ?? null }
+  }
+  return null
+}
+
 authRouter.post(
   '/signup',
   asyncHandler(async (req, res) => {
@@ -76,6 +97,57 @@ authRouter.post(
 
     logEvent('user.login', `${user.name}님이 로그인했어요`, { userId: user.id })
     res.json({ user: toPublicUser(user) })
+  }),
+)
+
+authRouter.post(
+  '/social',
+  asyncHandler(async (req, res) => {
+    const { provider, token, name, school, grade, inviteCode, avatar } = req.body ?? {}
+    if (provider !== 'google' && provider !== 'kakao') {
+      return res.status(400).json({ error: '지원하지 않는 로그인 방식이에요.' })
+    }
+    if (!token) {
+      return res.status(400).json({ error: '인증 토큰이 없어요.' })
+    }
+
+    let identity
+    try {
+      identity = await verifySocialToken(provider, token)
+    } catch {
+      identity = null
+    }
+    if (!identity) {
+      return res.status(401).json({ error: '로그인 정보를 확인하지 못했어요. 다시 시도해주세요.' })
+    }
+
+    const existing = await db.findUserByOauthId(identity.oauthId)
+    if (existing) {
+      logEvent('user.login', `${existing.name}님이 ${provider}로 로그인했어요`, { userId: existing.id })
+      return res.json({ user: toPublicUser(existing), isNew: false })
+    }
+
+    if (!name || !school || !grade) {
+      return res.json({ needsProfile: true })
+    }
+
+    const user = {
+      id: nanoid(12),
+      name,
+      school,
+      grade,
+      authProvider: provider,
+      phone: '',
+      email: identity.email ?? '',
+      oauthId: identity.oauthId,
+      passwordHash: null,
+      inviteCode: inviteCode || '',
+      avatar: avatar || '',
+      createdAt: new Date().toISOString(),
+    }
+    const inserted = await db.insertUser(user)
+    logEvent('user.signup', `${name}님이 ${provider}로 가입했어요`, { userId: user.id })
+    res.status(201).json({ user: toPublicUser(inserted), isNew: true })
   }),
 )
 

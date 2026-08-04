@@ -19,6 +19,7 @@ function rowToUser(row) {
     authProvider: row.auth_provider,
     phone: row.phone ?? '',
     email: row.email ?? '',
+    oauthId: row.oauth_id ?? null,
     passwordHash: row.password_hash,
     inviteCode: row.invite_code,
     avatar: row.avatar,
@@ -76,14 +77,18 @@ export const db = {
     const { rows } = await pool.query('select * from users where email = $1', [email])
     return rowToUser(rows[0])
   },
+  async findUserByOauthId(oauthId) {
+    const { rows } = await pool.query('select * from users where oauth_id = $1', [oauthId])
+    return rowToUser(rows[0])
+  },
   async findUserById(id) {
     const { rows } = await pool.query('select * from users where id = $1', [id])
     return rowToUser(rows[0])
   },
   async insertUser(user) {
     const { rows } = await pool.query(
-      `insert into users (id, name, school, grade, auth_provider, phone, email, password_hash, invite_code, avatar, created_at)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      `insert into users (id, name, school, grade, auth_provider, phone, email, oauth_id, password_hash, invite_code, avatar, created_at)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        returning *`,
       [
         user.id,
@@ -93,6 +98,7 @@ export const db = {
         user.authProvider,
         user.phone || null,
         user.email || null,
+        user.oauthId || null,
         user.passwordHash,
         user.inviteCode,
         user.avatar,

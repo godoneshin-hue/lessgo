@@ -12,6 +12,7 @@ create table if not exists users (
   password_hash text,
   invite_code text not null default '',
   avatar text not null default '',
+  oauth_id text unique,
   created_at timestamptz not null default now()
 );
 

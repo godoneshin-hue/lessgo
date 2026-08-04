@@ -42,7 +42,7 @@ export interface ApiUser {
   name: string
   school: string
   grade: string
-  authProvider: 'phone' | 'google'
+  authProvider: 'phone' | 'google' | 'kakao'
   phone: string
   email: string
   inviteCode: string
@@ -51,7 +51,7 @@ export interface ApiUser {
 }
 
 export function signup(payload: {
-  authProvider: 'phone' | 'google'
+  authProvider: 'phone' | 'google' | 'kakao'
   name: string
   school: string
   grade: string
@@ -66,6 +66,21 @@ export function signup(payload: {
 
 export function login(payload: { phone: string; password: string }) {
   return request<{ user: ApiUser }>('/auth/login', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function socialAuth(payload: {
+  provider: 'google' | 'kakao'
+  token: string
+  name?: string
+  school?: string
+  grade?: string
+  inviteCode?: string
+  avatar?: string
+}) {
+  return request<{ user: ApiUser; isNew: boolean } | { needsProfile: true }>('/auth/social', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
 export function updateAvatar(userId: string, avatar: string) {

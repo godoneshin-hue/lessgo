@@ -1,17 +1,52 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useGoogleLogin } from '@react-oauth/google'
 import { useStore } from '../state/store'
 import { ApiError } from '../lib/api'
 import { formatPhone } from '../lib/phone'
+import { kakaoLogin } from '../lib/kakao'
 import { ChevronRightIcon, GoogleIcon, KakaoIcon } from '../components/icons'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login, pushToast } = useStore()
+  const { login, socialAuth, pushToast } = useStore()
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [socialBusy, setSocialBusy] = useState(false)
+
+  async function handleSocial(provider: 'google' | 'kakao', token: string) {
+    setSocialBusy(true)
+    try {
+      const result = await socialAuth(provider, token)
+      if (result.needsProfile) {
+        pushToast('가입된 계정이 없어요, 회원가입으로 진행해주세요')
+        navigate('/signup')
+        return
+      }
+      navigate('/home')
+    } catch (err) {
+      pushToast(err instanceof ApiError ? err.message : '로그인에 실패했어요.')
+    } finally {
+      setSocialBusy(false)
+    }
+  }
+
+  const googleLogin = useGoogleLogin({
+    flow: 'implicit',
+    onSuccess: (res) => handleSocial('google', res.access_token),
+    onError: () => pushToast('구글 로그인에 실패했어요.'),
+  })
+
+  async function handleKakaoLogin() {
+    try {
+      const token = await kakaoLogin()
+      await handleSocial('kakao', token)
+    } catch {
+      pushToast('카카오 로그인에 실패했어요.')
+    }
+  }
 
   const canSubmit = phone.replace(/\D/g, '').length >= 10 && password.trim().length > 0 && !submitting
 
@@ -92,16 +127,18 @@ export default function Login() {
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => pushToast('소셜 로그인은 준비 중이에요')}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-line bg-surface py-3 text-sm font-bold text-ink"
+            disabled={socialBusy}
+            onClick={() => googleLogin()}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-line bg-surface py-3 text-sm font-bold text-ink disabled:opacity-60"
           >
             <GoogleIcon className="h-[18px] w-[18px]" />
             Google
           </button>
           <button
             type="button"
-            onClick={() => pushToast('소셜 로그인은 준비 중이에요')}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#FEE500] py-3 text-sm font-bold text-[#3C1E1E]"
+            disabled={socialBusy}
+            onClick={handleKakaoLogin}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#FEE500] py-3 text-sm font-bold text-[#3C1E1E] disabled:opacity-60"
           >
             <KakaoIcon className="h-[18px] w-[18px]" />
             카카오
