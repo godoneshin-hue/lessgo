@@ -41,7 +41,7 @@ export default function Verify() {
           to="/challenges/new"
           className="mt-5 rounded-full bg-gradient-primary-soft px-6 py-2.5 text-sm font-extrabold text-white shadow-glow active:scale-95"
         >
-          개인 챌린지 만들러 가기
+          챌린지 만들러 가기
         </Link>
       </div>
     )
