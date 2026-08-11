@@ -153,6 +153,14 @@ export function KakaoIcon({ className }: IconProps) {
   )
 }
 
+export function ChatIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...common}>
+      <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-4 3.5v-3.5h-.5A2.5 2.5 0 0 1 2 13.5Z" />
+    </svg>
+  )
+}
+
 export function LinkIcon({ className }: IconProps) {
   return (
     <svg className={className} {...common}>

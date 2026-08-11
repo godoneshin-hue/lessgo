@@ -278,3 +278,26 @@ export function adminGetVerifications() {
 export function adminDeleteVerification(id: string) {
   return request<{ ok: true }>(`/admin/verifications/${id}`, { method: 'DELETE' })
 }
+
+export type FeedbackCategory = 'design' | 'function' | 'other'
+
+export interface ApiFeedback {
+  id: string
+  userId: string | null
+  userName: string
+  category: FeedbackCategory
+  message: string
+  createdAt: string
+}
+
+export function submitFeedback(userId: string, category: FeedbackCategory, message: string) {
+  return request<{ feedback: ApiFeedback }>('/feedback', {
+    method: 'POST',
+    userId,
+    body: JSON.stringify({ category, message }),
+  })
+}
+
+export function adminGetFeedback() {
+  return request<{ feedback: ApiFeedback[] }>('/admin/feedback')
+}

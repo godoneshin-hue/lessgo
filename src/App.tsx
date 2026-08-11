@@ -14,6 +14,7 @@ import ChallengeNew from './pages/ChallengeNew'
 import ChallengeDetail from './pages/ChallengeDetail'
 import Stats from './pages/Stats'
 import Me from './pages/Me'
+import Feedback from './pages/Feedback'
 import Admin from './pages/Admin'
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -78,6 +79,7 @@ export default function App() {
           <Route path="/challenges/:id" element={<ChallengeDetail />} />
           <Route path="/stats" element={<Stats />} />
           <Route path="/me" element={<Me />} />
+          <Route path="/feedback" element={<Feedback />} />
         </Route>
 
         <Route path="/admin" element={<Admin />} />
