@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import * as api from '../lib/api'
-import type { ApiChallenge, ApiLog, ApiUser, ApiVerification } from '../lib/api'
+import type { ApiChallenge, ApiFeedback, ApiLog, ApiUser, ApiVerification } from '../lib/api'
 import Avatar from '../components/Avatar'
 import AppIcon from '../components/AppIcon'
 import { pickAvatarEmoji } from '../state/seed'
 import { minutesToLabel } from '../lib/date'
 
 type Section = 'overview' | 'data' | 'logs'
-type Entity = 'users' | 'challenges' | 'verifications' | null
+type Entity = 'users' | 'challenges' | 'verifications' | 'feedback' | null
 
 const CATEGORY_LABEL: Record<string, string> = {
   friends: '친구 대결',
@@ -22,6 +22,13 @@ const LOG_ICON: Record<string, string> = {
   'challenge.join': '🤝',
   'admin.delete_user': '🗑️',
   'admin.delete_challenge': '🗑️',
+  'feedback.submit': '💬',
+}
+
+const FEEDBACK_CATEGORY_LABEL: Record<string, string> = {
+  design: '디자인',
+  function: '기능',
+  other: '기타',
 }
 
 export default function Admin() {
@@ -31,6 +38,7 @@ export default function Admin() {
   const [challenges, setChallenges] = useState<ApiChallenge[] | null>(null)
   const [logs, setLogs] = useState<ApiLog[] | null>(null)
   const [verifications, setVerifications] = useState<ApiVerification[] | null>(null)
+  const [feedback, setFeedback] = useState<ApiFeedback[] | null>(null)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [confirmTarget, setConfirmTarget] = useState<
@@ -41,12 +49,19 @@ export default function Admin() {
   const [pwError, setPwError] = useState('')
 
   function loadAll() {
-    Promise.all([api.adminGetUsers(), api.adminGetChallenges(), api.adminGetLogs(), api.adminGetVerifications()])
-      .then(([u, c, l, v]) => {
+    Promise.all([
+      api.adminGetUsers(),
+      api.adminGetChallenges(),
+      api.adminGetLogs(),
+      api.adminGetVerifications(),
+      api.adminGetFeedback(),
+    ])
+      .then(([u, c, l, v, f]) => {
         setUsers(u.users)
         setChallenges(c.challenges)
         setLogs(l.logs)
         setVerifications(v.verifications)
+        setFeedback(f.feedback)
         setError('')
       })
       .catch((err) => {
@@ -144,6 +159,7 @@ export default function Admin() {
             userCount={users?.length}
             challengeCount={challenges?.length}
             verificationCount={verifications?.length}
+            feedbackCount={feedback?.length}
             onOpen={(e) => {
               setEntity(e)
               setSearch('')
@@ -179,6 +195,10 @@ export default function Admin() {
             onBack={() => setEntity(null)}
             onDelete={(v) => setConfirmTarget({ kind: 'verification', id: v.id, label: `${v.userName ?? v.userId} · ${v.date}` })}
           />
+        )}
+
+        {section === 'data' && entity === 'feedback' && (
+          <FeedbackTable feedback={feedback} search={search} onSearch={setSearch} onBack={() => setEntity(null)} />
         )}
 
         {section === 'logs' && <LogsView logs={logs} />}
@@ -329,12 +349,14 @@ function DataHome({
   userCount,
   challengeCount,
   verificationCount,
+  feedbackCount,
   onOpen,
 }: {
   userCount?: number
   challengeCount?: number
   verificationCount?: number
-  onOpen: (e: 'users' | 'challenges' | 'verifications') => void
+  feedbackCount?: number
+  onOpen: (e: 'users' | 'challenges' | 'verifications' | 'feedback') => void
 }) {
   return (
     <div>
@@ -362,6 +384,13 @@ function DataHome({
           count={verificationCount}
           description="일일 인증 기록 · 취소는 여기서만 가능해요"
           onClick={() => onOpen('verifications')}
+        />
+        <EntityCard
+          icon="💬"
+          name="Feedback"
+          count={feedbackCount}
+          description="유저가 보낸 피드백 · 분류, 내용, 보낸 사람"
+          onClick={() => onOpen('feedback')}
         />
       </div>
     </div>
@@ -658,6 +687,64 @@ function VerificationsTable({
             {verifications !== null && filtered.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-[#9AA3BD]">
+                  결과가 없어요.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function FeedbackTable({
+  feedback,
+  search,
+  onSearch,
+  onBack,
+}: {
+  feedback: ApiFeedback[] | null
+  search: string
+  onSearch: (v: string) => void
+  onBack: () => void
+}) {
+  const filtered = useMemo(() => {
+    if (!feedback) return []
+    const q = search.trim().toLowerCase()
+    if (!q) return feedback
+    return feedback.filter((f) => [f.userName, f.message].some((field) => field.toLowerCase().includes(q)))
+  }, [feedback, search])
+
+  return (
+    <div>
+      <TableToolbar onBack={onBack} search={search} onSearch={onSearch} label="Feedback" />
+      <div className="overflow-x-auto rounded-2xl border border-[#E2E6F0] bg-white">
+        <table className="w-full min-w-[640px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-[#E2E6F0] text-left text-xs uppercase tracking-wide text-[#9AA3BD]">
+              <Th>보낸 사람</Th>
+              <Th>분류</Th>
+              <Th>내용</Th>
+              <Th>보낸 시간</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((f) => (
+              <tr key={f.id} className="border-b border-[#F0F2F8] last:border-0 hover:bg-[#FAFBFD]">
+                <Td className="font-semibold text-[#1B2333]">{f.userName}</Td>
+                <Td>
+                  <span className="rounded-full bg-primary-tint px-2 py-1 text-xs font-bold text-primary-ink">
+                    {FEEDBACK_CATEGORY_LABEL[f.category] ?? f.category}
+                  </span>
+                </Td>
+                <Td className="whitespace-normal">{f.message}</Td>
+                <Td className="tabular-nums text-[#9AA3BD]">{formatDateTime(f.createdAt)}</Td>
+              </tr>
+            ))}
+            {feedback !== null && filtered.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-[#9AA3BD]">
                   결과가 없어요.
                 </td>
               </tr>

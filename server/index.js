@@ -6,6 +6,7 @@ import { challengesRouter } from './routes/challenges.js'
 import { adminRouter } from './routes/admin.js'
 import { verifyRouter } from './routes/verify.js'
 import { verificationsRouter } from './routes/verifications.js'
+import { feedbackRouter } from './routes/feedback.js'
 import { db } from './db.js'
 import { requireAdminPassword } from './adminAuth.js'
 
@@ -28,15 +29,17 @@ app.use('/api/challenges', challengesRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api/verify', verifyRouter)
 app.use('/api/verifications', verificationsRouter)
+app.use('/api/feedback', feedbackRouter)
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
 app.get('/', requireAdminPassword, async (_req, res) => {
-  const [users, challenges, logs, verifications] = await Promise.all([
+  const [users, challenges, logs, verifications, feedback] = await Promise.all([
     db.getUsers(),
     db.getChallenges(),
     db.getLogs(),
     db.getAllVerifications(),
+    db.getAllFeedback(),
   ])
   const uptimeMin = Math.floor(process.uptime() / 60)
 
@@ -46,7 +49,7 @@ app.get('/', requireAdminPassword, async (_req, res) => {
     <title>LessGo API</title>
     <style>
       body { font-family: system-ui, sans-serif; max-width: 64rem; margin: 3rem auto; padding: 0 1.5rem; line-height: 1.6; color: #1a1a1a; }
-      .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0 2.5rem; }
+      .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin: 1.5rem 0 2.5rem; }
       .stat { background: #f4f4f5; border-radius: 12px; padding: 1rem; text-align: center; }
       .stat b { display: block; font-size: 1.8rem; }
       .stat span { font-size: 0.85rem; color: #666; }
@@ -64,6 +67,7 @@ app.get('/', requireAdminPassword, async (_req, res) => {
         <div class="stat"><b>${users.length}</b><span>가입자</span></div>
         <div class="stat"><b>${challenges.length}</b><span>챌린지</span></div>
         <div class="stat"><b>${verifications.length}</b><span>인증 기록</span></div>
+        <div class="stat"><b>${feedback.length}</b><span>피드백</span></div>
         <div class="stat"><b>${logs.length}</b><span>최근 로그</span></div>
       </div>
 
@@ -117,6 +121,24 @@ app.get('/', requireAdminPassword, async (_req, res) => {
                 escapeHtml(v.date),
                 escapeHtml(`${v.usedMinutes}분`),
                 escapeHtml(v.apps.map((a) => `${a.name} ${a.minutes}분`).join(', ') || '—'),
+              ]),
+            )
+            .join('')}
+        </table></div>
+      </section>
+
+      <section>
+        <h2>피드백 (${feedback.length})</h2>
+        <div class="wrap"><table>
+          <tr><th>보낸 사람</th><th>분류</th><th>내용</th><th>시간</th></tr>
+          ${feedback
+            .slice(0, 200)
+            .map((f) =>
+              row([
+                escapeHtml(f.userName),
+                escapeHtml({ design: '디자인', function: '기능', other: '기타' }[f.category] ?? f.category),
+                escapeHtml(f.message),
+                escapeHtml(new Date(f.createdAt).toLocaleString('ko-KR')),
               ]),
             )
             .join('')}

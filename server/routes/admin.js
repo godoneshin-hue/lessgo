@@ -73,3 +73,10 @@ adminRouter.delete(
     res.json({ ok: true })
   }),
 )
+
+adminRouter.get(
+  '/feedback',
+  asyncHandler(async (_req, res) => {
+    res.json({ feedback: await db.getAllFeedback() })
+  }),
+)

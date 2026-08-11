@@ -81,6 +81,18 @@ function rowToVerification(row) {
   }
 }
 
+function rowToFeedback(row) {
+  if (!row) return null
+  return {
+    id: row.id,
+    userId: row.user_id,
+    userName: row.user_name,
+    category: row.category,
+    message: row.message,
+    createdAt: row.created_at.toISOString(),
+  }
+}
+
 export const db = {
   async getUsers() {
     const { rows } = await pool.query('select * from users order by created_at desc')
@@ -282,5 +294,19 @@ export const db = {
        limit 500`,
     )
     return rows.map(rowToVerification)
+  },
+
+  async insertFeedback(f) {
+    const { rows } = await pool.query(
+      `insert into feedback (id, user_id, user_name, category, message, created_at)
+       values ($1,$2,$3,$4,$5,$6)
+       returning *`,
+      [f.id, f.userId, f.userName, f.category, f.message, f.createdAt],
+    )
+    return rowToFeedback(rows[0])
+  },
+  async getAllFeedback() {
+    const { rows } = await pool.query('select * from feedback order by created_at desc limit 500')
+    return rows.map(rowToFeedback)
   },
 }

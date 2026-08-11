@@ -62,6 +62,16 @@ create table if not exists verifications (
   unique(user_id, date)
 );
 
+create table if not exists feedback (
+  id text primary key,
+  user_id text references users(id) on delete set null,
+  user_name text not null,
+  category text not null,
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists idx_challenges_creator on challenges(creator_id);
 create index if not exists idx_logs_created_at on logs(created_at desc);
 create index if not exists idx_verifications_user on verifications(user_id);
+create index if not exists idx_feedback_created_at on feedback(created_at desc);
