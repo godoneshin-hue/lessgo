@@ -10,11 +10,12 @@ import { pickAvatarEmoji } from '../state/seed'
 import Avatar from '../components/Avatar'
 import { CameraIcon, ChevronRightIcon, GoogleIcon, KakaoIcon } from '../components/icons'
 
-const SCHOOL_LEVELS = [
-  { label: '중학생', full: '중학교' },
-  { label: '고등학생', full: '고등학교' },
+const SCHOOL_LEVELS: { label: string; full: string; grades: number[] | null }[] = [
+  { label: '중학생', full: '중학교', grades: [1, 2, 3] },
+  { label: '고등학생', full: '고등학교', grades: [1, 2, 3] },
+  { label: '대학생', full: '대학교', grades: [1, 2, 3, 4] },
+  { label: '성인', full: '성인', grades: null },
 ]
-const GRADE_NUMS = [1, 2, 3]
 
 type Step = 'method' | 'credentials' | 'profile'
 type SocialProvider = 'google' | 'kakao'
@@ -40,7 +41,13 @@ export default function Signup() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const grade = schoolLevel && gradeNum ? `${schoolLevel.full} ${gradeNum}학년` : ''
+  const grade = schoolLevel
+    ? schoolLevel.grades
+      ? gradeNum
+        ? `${schoolLevel.full} ${gradeNum}학년`
+        : ''
+      : schoolLevel.full
+    : ''
 
   const canSubmitCredentials = phone.replace(/\D/g, '').length >= 10 && password.trim().length > 0
   const canSubmitProfile = name.trim().length > 0 && school.trim().length > 0 && grade.length > 0 && !submitting
@@ -264,13 +271,16 @@ export default function Signup() {
           </Field>
 
           <Field label="학년">
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1.5">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {SCHOOL_LEVELS.map((level) => (
                   <button
                     key={level.label}
                     type="button"
-                    onClick={() => setSchoolLevel(level)}
+                    onClick={() => {
+                      setSchoolLevel(level)
+                      setGradeNum(null)
+                    }}
                     className={`rounded-xl border px-3 py-3 text-sm font-bold transition-colors ${
                       schoolLevel?.label === level.label
                         ? 'border-primary bg-primary-tint text-primary-ink'
@@ -281,20 +291,22 @@ export default function Signup() {
                   </button>
                 ))}
               </div>
-              <div className="flex flex-1 gap-1.5">
-                {GRADE_NUMS.map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setGradeNum(n)}
-                    className={`flex-1 rounded-xl border py-3 text-sm font-bold transition-colors ${
-                      gradeNum === n ? 'border-primary bg-primary-tint text-primary-ink' : 'border-line text-ink-soft'
-                    }`}
-                  >
-                    {n}학년
-                  </button>
-                ))}
-              </div>
+              {schoolLevel?.grades && (
+                <div className="flex gap-1.5">
+                  {schoolLevel.grades.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setGradeNum(n)}
+                      className={`flex-1 rounded-xl border py-3 text-sm font-bold transition-colors ${
+                        gradeNum === n ? 'border-primary bg-primary-tint text-primary-ink' : 'border-line text-ink-soft'
+                      }`}
+                    >
+                      {n}학년
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </Field>
 
