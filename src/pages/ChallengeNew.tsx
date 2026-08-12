@@ -19,7 +19,7 @@ interface AppLimitRow {
 
 export default function ChallengeNew() {
   const navigate = useNavigate()
-  const { profile, pushToast } = useStore()
+  const { profile, pushToast, refreshChallenges } = useStore()
 
   const [mode, setMode] = useState<'solo' | 'group' | null>(null)
   const [title, setTitle] = useState('')
@@ -126,6 +126,7 @@ export default function ChallengeNew() {
         memo: memo.trim() || null,
       })
       pushToast('챌린지를 만들었어요')
+      refreshChallenges()
       navigate(`/challenges/${challenge.id}`)
     } catch (err) {
       pushToast(err instanceof ApiError ? err.message : '챌린지를 만들지 못했어요.')

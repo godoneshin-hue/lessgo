@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useStore } from '../state/store'
 import * as api from '../lib/api'
-import { ApiError, type ApiChallenge } from '../lib/api'
+import { ApiError } from '../lib/api'
 import { minutesToLabel } from '../lib/date'
 import { FlagIcon, LinkIcon } from '../components/icons'
 
@@ -13,18 +13,10 @@ const CATEGORY_LABEL: Record<string, string> = {
 }
 
 export default function Challenges() {
-  const { profile, pushToast } = useStore()
+  const { profile, pushToast, challenges, refreshChallenges } = useStore()
   const navigate = useNavigate()
-  const [challenges, setChallenges] = useState<ApiChallenge[] | null>(null)
   const [code, setCode] = useState('')
   const [joining, setJoining] = useState(false)
-
-  useEffect(() => {
-    api
-      .listMyChallenges(profile.id)
-      .then(({ challenges }) => setChallenges(challenges))
-      .catch(() => setChallenges([]))
-  }, [profile.id])
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault()
@@ -34,6 +26,7 @@ export default function Challenges() {
       const { challenge } = await api.joinChallenge(profile.id, { code: code.trim() })
       pushToast(`"${challenge.title}" 챌린지에 참여했어요`)
       setCode('')
+      refreshChallenges()
       navigate(`/challenges/${challenge.id}`)
     } catch (err) {
       pushToast(err instanceof ApiError ? err.message : '참여하지 못했어요.')

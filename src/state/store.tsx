@@ -1,9 +1,9 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { usePersistentState } from '../lib/storage'
 import { EMPTY_PROFILE, buildEmptyRecords, pickAvatarEmoji } from './seed'
 import { todayISO } from '../lib/date'
 import * as api from '../lib/api'
-import type { ApiUser } from '../lib/api'
+import type { ApiChallenge, ApiUser } from '../lib/api'
 import type { DayRecord, Profile } from './types'
 
 interface Toast {
@@ -56,6 +56,8 @@ interface StoreValue {
   unverifyToday: () => void
   toasts: Toast[]
   pushToast: (message: string) => void
+  challenges: ApiChallenge[] | null
+  refreshChallenges: () => Promise<void>
 }
 
 const StoreContext = createContext<StoreValue | null>(null)
@@ -66,9 +68,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [records, setRecords] = usePersistentState<DayRecord[]>('lessgo:records', buildEmptyRecords())
   const [toasts, setToasts] = useState<Toast[]>([])
   const [justAuthenticated, setJustAuthenticated] = useState(false)
+  const [challenges, setChallenges] = useState<ApiChallenge[] | null>(null)
 
   const today = todayISO()
   const todayRecord = records.find((r) => r.date === today) ?? { date: today, usedMinutes: null, verified: false }
+
+  // Fetched once per login and shared across every page (Home, Verify, Stats,
+  // Challenges) instead of each page re-fetching it on every mount — that
+  // redundant refetch-on-every-tab-switch was the main cause of the app
+  // feeling slow to navigate. Mutation call sites (create/join/edit a
+  // challenge) call refreshChallenges() themselves to invalidate this.
+  async function refreshChallenges() {
+    if (!profile.id) return
+    try {
+      const { challenges } = await api.listMyChallenges(profile.id)
+      setChallenges(challenges)
+    } catch {
+      // Keep whatever was cached before — a transient failure shouldn't wipe it.
+    }
+  }
+
+  useEffect(() => {
+    if (!profile.id) {
+      setChallenges(null)
+      return
+    }
+    refreshChallenges()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.id])
 
   function pushToast(message: string) {
     const id = Date.now()
@@ -172,6 +199,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     unverifyToday,
     toasts,
     pushToast,
+    challenges,
+    refreshChallenges,
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

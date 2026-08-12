@@ -45,7 +45,7 @@ function failWeekCount(
 export default function ChallengeDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { profile, records, pushToast } = useStore()
+  const { profile, records, pushToast, refreshChallenges } = useStore()
   const [challenge, setChallenge] = useState<ApiChallenge | null>(null)
   const [loading, setLoading] = useState(true)
   const [joining, setJoining] = useState(false)
@@ -118,6 +118,7 @@ export default function ChallengeDetail() {
       await api.joinChallenge(profile.id, { challengeId: id })
       pushToast('챌린지에 참여했어요')
       load()
+      refreshChallenges()
     } catch (err) {
       pushToast(err instanceof ApiError ? err.message : '참여하지 못했어요.')
     } finally {
@@ -210,6 +211,7 @@ export default function ChallengeDetail() {
       setChallenge(updated)
       setEditing(false)
       pushToast(updated.pendingEdit ? '수정 제안을 보냈어요. 멤버들의 동의를 기다려요.' : '챌린지를 수정했어요')
+      refreshChallenges()
     } catch (err) {
       pushToast(err instanceof ApiError ? err.message : '수정하지 못했어요.')
     } finally {
@@ -222,6 +224,7 @@ export default function ChallengeDetail() {
       const { challenge: updated } = await api.approveChallengeEdit(profile.id, challenge!.id)
       setChallenge(updated)
       pushToast(updated.pendingEdit ? '동의했어요' : '모두 동의해서 수정이 반영됐어요')
+      refreshChallenges()
     } catch (err) {
       pushToast(err instanceof ApiError ? err.message : '처리하지 못했어요.')
     }

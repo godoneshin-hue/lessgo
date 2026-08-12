@@ -1,6 +1,3 @@
-import { useEffect, useState } from 'react'
-import * as api from './api'
-import type { ApiChallenge } from './api'
 import { useStore } from '../state/store'
 
 /**
@@ -9,17 +6,7 @@ import { useStore } from '../state/store'
  * Home/Verify/Stats can show progress against it without a separate concept.
  */
 export function usePersonalChallenge() {
-  const { profile } = useStore()
-  const [challenges, setChallenges] = useState<ApiChallenge[] | null>(null)
-
-  useEffect(() => {
-    if (!profile.id) return
-    api
-      .listMyChallenges(profile.id)
-      .then(({ challenges }) => setChallenges(challenges))
-      .catch(() => setChallenges([]))
-  }, [profile.id])
-
+  const { challenges } = useStore()
   const personalChallenge = challenges?.find((c) => c.mode === 'solo') ?? null
 
   return { challenges, personalChallenge, loading: challenges === null }
