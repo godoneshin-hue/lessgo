@@ -55,7 +55,7 @@ jobs:
         working-directory: android
         run: |
           cat > keystore.properties <<EOF
-          storeFile=app/release.keystore
+          storeFile=release.keystore
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
           keyPassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
