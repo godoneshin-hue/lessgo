@@ -7,3 +7,15 @@ server/data
 .env
 
 .vercel
+
+# Android signing material — generated at build time from GitHub Secrets,
+# never committed (see .github/workflows/build-android.yml).
+android/keystore.properties
+android/app/*.keystore
+*.keystore
+
+# Native build output (Capacitor Android project itself is tracked).
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
