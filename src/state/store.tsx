@@ -58,6 +58,8 @@ interface StoreValue {
   pushToast: (message: string) => void
   challenges: ApiChallenge[] | null
   refreshChallenges: () => Promise<void>
+  equippedBadge: number | null
+  setEquippedBadge: (days: number | null) => void
 }
 
 const StoreContext = createContext<StoreValue | null>(null)
@@ -69,6 +71,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [justAuthenticated, setJustAuthenticated] = useState(false)
   const [challenges, setChallenges] = useState<ApiChallenge[] | null>(null)
+  const [equippedBadge, setEquippedBadge] = usePersistentState<number | null>('lessgo:equippedBadge', null)
 
   const today = todayISO()
   const todayRecord = records.find((r) => r.date === today) ?? { date: today, usedMinutes: null, verified: false }
@@ -201,6 +204,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     pushToast,
     challenges,
     refreshChallenges,
+    equippedBadge,
+    setEquippedBadge,
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

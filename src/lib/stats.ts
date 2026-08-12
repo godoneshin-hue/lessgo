@@ -1,4 +1,5 @@
 import type { DayRecord } from '../state/types'
+import { addDays } from './date'
 
 interface Threshold {
   dailyLimitMinutes: number
@@ -39,6 +40,29 @@ export function verifiedCounts(records: DayRecord[], goal: Threshold, sinceDateE
   const successDays = scoped.filter((r) => isSuccess(r, goal)).length
   const failDays = scoped.filter((r) => isFail(r, goal)).length
   return { successDays, failDays }
+}
+
+/**
+ * The longest streak the user has EVER had, anywhere in their history — not
+ * just the trailing one from currentStreak(). A streak badge, once earned,
+ * shouldn't un-earn itself just because today broke the current streak.
+ */
+export function bestStreak(records: DayRecord[], goal: Threshold): number {
+  const sorted = [...records].sort((a, b) => (a.date < b.date ? -1 : 1))
+  let best = 0
+  let current = 0
+  let prevDate: string | null = null
+  for (const r of sorted) {
+    if (!isSuccess(r, goal)) {
+      current = 0
+      prevDate = null
+      continue
+    }
+    current = prevDate && addDays(prevDate, 1) === r.date ? current + 1 : 1
+    prevDate = r.date
+    best = Math.max(best, current)
+  }
+  return best
 }
 
 export function averageUsage(records: DayRecord[]): number {

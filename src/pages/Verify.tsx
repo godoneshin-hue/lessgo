@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../state/store'
-import { isSuccess } from '../lib/stats'
+import { bestStreak, isSuccess } from '../lib/stats'
 import { usePersonalChallenge } from '../lib/usePersonalChallenge'
 import { addDays, minutesToLabel, todayISO, weekdayKr } from '../lib/date'
 import { fileToScreenshotDataUrl } from '../lib/image'
 import * as api from '../lib/api'
 import { ApiError } from '../lib/api'
-import type { AppUsage } from '../state/types'
+import type { AppUsage, DayRecord } from '../state/types'
+import { STREAK_BADGES } from '../state/badges'
 import { ChevronRightIcon, XIcon } from '../components/icons'
 import AppIcon from '../components/AppIcon'
 
@@ -129,9 +130,20 @@ export default function Verify() {
   }
 
   async function handleSubmit() {
+    // Compare best-streak-so-far against what it'll become after today's
+    // record lands, so a freshly-crossed badge tier gets its own toast
+    // instead of silently unlocking in the background.
+    const projected: DayRecord[] = [...records.filter((r) => r.date !== today), { date: today, usedMinutes: total, verified: true, apps }]
+    const prevBest = bestStreak(records, threshold)
+    const newBest = bestStreak(projected, threshold)
+    const newlyUnlocked = [...STREAK_BADGES].reverse().find((b) => prevBest < b.days && b.days <= newBest)
+
     verifyToday(total, apps)
     const success = total <= threshold.dailyLimitMinutes
     pushToast(success ? '인증 완료! 오늘 목표를 달성했어요 🎉' : '인증 완료! 오늘은 목표를 조금 넘었어요')
+    if (newlyUnlocked) {
+      pushToast(`${newlyUnlocked.icon} ${newlyUnlocked.label} 뱃지를 획득했어요!`)
+    }
     if (profile.id) {
       // Fire-and-forget: the local record is what drives the UI immediately;
       // the server copy exists so admin can audit/delete it later.

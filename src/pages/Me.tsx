@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useStore } from '../state/store'
-import { currentStreak } from '../lib/stats'
+import { bestStreak, currentStreak } from '../lib/stats'
 import { usePersonalChallenge } from '../lib/usePersonalChallenge'
 import { fileToAvatarDataUrl } from '../lib/image'
+import { STREAK_BADGES } from '../state/badges'
 import Avatar from '../components/Avatar'
 import { CameraIcon, ChatIcon, ChevronRightIcon, FlagIcon } from '../components/icons'
 
@@ -15,13 +16,25 @@ const PREMIUM_FEATURES = [
 ]
 
 export default function Me() {
-  const { profile, records, pushToast, logout, updateAvatar } = useStore()
+  const { profile, records, pushToast, logout, updateAvatar, equippedBadge, setEquippedBadge } = useStore()
   const { personalChallenge } = usePersonalChallenge()
   const navigate = useNavigate()
   const [reminderOn, setReminderOn] = useState(true)
   const [challengeAlertOn, setChallengeAlertOn] = useState(true)
   const [uploading, setUploading] = useState(false)
-  const streak = personalChallenge ? currentStreak(records, { dailyLimitMinutes: personalChallenge.goalMinutes }) : 0
+  const threshold = personalChallenge ? { dailyLimitMinutes: personalChallenge.goalMinutes } : null
+  const streak = threshold ? currentStreak(records, threshold) : 0
+  const longestStreak = threshold ? bestStreak(records, threshold) : 0
+  // Guard against a badge that was equipped once but is no longer unlocked
+  // (shouldn't happen since badges never un-earn, but records can be wiped).
+  const equippedIcon =
+    equippedBadge !== null && longestStreak >= equippedBadge
+      ? STREAK_BADGES.find((b) => b.days === equippedBadge)?.icon
+      : undefined
+
+  function toggleEquip(days: number) {
+    setEquippedBadge(equippedBadge === days ? null : days)
+  }
 
   function handleLogout() {
     logout()
@@ -50,9 +63,14 @@ export default function Me() {
       <section className="flex items-center gap-4 rounded-3xl bg-surface p-5 shadow-card">
         <label className="group relative shrink-0 cursor-pointer">
           <Avatar src={profile.avatar} emoji={profile.emoji} size={56} />
-          <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-primary text-white transition-transform group-active:scale-90">
+          <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-primary text-white transition-transform group-active:scale-90">
             <CameraIcon className="h-3 w-3" />
           </span>
+          {equippedIcon && (
+            <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-surface text-sm shadow-pop">
+              {equippedIcon}
+            </span>
+          )}
           <input type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} disabled={uploading} />
         </label>
         <div className="flex-1">
@@ -65,6 +83,46 @@ export default function Me() {
           </p>
         </div>
       </section>
+
+      {personalChallenge && (
+        <section className="rounded-3xl bg-surface p-5 shadow-card">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">연속 뱃지</p>
+            <p className="text-xs font-semibold text-ink-soft">최고 기록 {longestStreak}일</p>
+          </div>
+          <div className="mt-3 grid grid-cols-5 gap-2">
+            {STREAK_BADGES.map((b) => {
+              const unlocked = longestStreak >= b.days
+              const equipped = equippedBadge === b.days
+              return (
+                <button
+                  key={b.days}
+                  type="button"
+                  disabled={!unlocked}
+                  onClick={() => toggleEquip(b.days)}
+                  className="flex flex-col items-center gap-1.5 disabled:cursor-not-allowed"
+                >
+                  <span
+                    className={`flex h-11 w-11 items-center justify-center rounded-full text-xl transition-colors ${
+                      unlocked ? 'bg-primary-tint' : 'bg-bg grayscale opacity-40'
+                    } ${equipped ? 'ring-2 ring-primary ring-offset-1 ring-offset-surface' : ''}`}
+                  >
+                    {b.icon}
+                  </span>
+                  <span className={`text-center text-[10px] font-bold ${unlocked ? 'text-ink' : 'text-ink-faint'}`}>
+                    {b.days}일
+                  </span>
+                  {unlocked && (
+                    <span className={`text-center text-[9px] font-bold ${equipped ? 'text-primary-ink' : 'text-ink-faint'}`}>
+                      {equipped ? '사용 중' : '사용하기'}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="rounded-3xl bg-surface p-2 shadow-card">
         <MenuRow label="내 챌린지 보기" to="/challenges" icon={<FlagIcon className="h-4 w-4" />} />
