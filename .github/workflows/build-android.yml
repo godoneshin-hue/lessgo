@@ -29,15 +29,17 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      # `npm ci` strictly installs only what's pinned in package-lock.json,
-      # including which platform-specific optional binary (e.g. rollup's
-      # native addon) it recorded — since this lockfile gets regenerated on
-      # whatever OS a contributor last ran `npm install` on, that pinned
-      # binary won't always match this Linux runner. `npm install` re-resolves
-      # optional deps for the current platform instead of trusting the lock
-      # (see https://github.com/npm/cli/issues/4828).
+      # package-lock.json is maintained from a Windows dev machine, so it only
+      # ever records the Windows-flavored optional native binaries (rollup,
+      # esbuild, etc. all ship one npm package per OS/CPU). Even a plain
+      # `npm install` treats an already-locked optional dependency as
+      # resolved and won't backfill the Linux variant — this is the known
+      # npm/cli#4828 bug, whose own suggested fix is exactly this: drop the
+      # lockfile and resolve fresh for whatever platform is actually running.
       - name: Install dependencies
-        run: npm install
+        run: |
+          rm -f package-lock.json
+          npm install
 
       - name: Build web assets
         run: npm run build
