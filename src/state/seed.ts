@@ -24,6 +24,9 @@ export const EMPTY_PROFILE: Profile = {
   inviteCode: '',
   emoji: AVATAR_EMOJIS[0],
   avatar: '',
+  cash: 0,
+  equippedBadge: null,
+  ownedBadges: [],
 }
 
 export const APP_CATALOG: { name: string; icon: string }[] = [

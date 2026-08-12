@@ -7,6 +7,7 @@ import { adminRouter } from './routes/admin.js'
 import { verifyRouter } from './routes/verify.js'
 import { verificationsRouter } from './routes/verifications.js'
 import { feedbackRouter } from './routes/feedback.js'
+import { shopRouter } from './routes/shop.js'
 import { db } from './db.js'
 import { requireAdminPassword } from './adminAuth.js'
 
@@ -30,6 +31,7 @@ app.use('/api/admin', adminRouter)
 app.use('/api/verify', verifyRouter)
 app.use('/api/verifications', verificationsRouter)
 app.use('/api/feedback', feedbackRouter)
+app.use('/api/shop', shopRouter)
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 

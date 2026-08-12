@@ -136,7 +136,7 @@ export default function Verify() {
     const projected: DayRecord[] = [...records.filter((r) => r.date !== today), { date: today, usedMinutes: total, verified: true, apps }]
     const prevBest = bestStreak(records, threshold)
     const newBest = bestStreak(projected, threshold)
-    const newlyUnlocked = [...STREAK_BADGES].reverse().find((b) => prevBest < b.days && b.days <= newBest)
+    const newlyUnlocked = [...STREAK_BADGES].reverse().find((b) => b.days !== undefined && prevBest < b.days && b.days <= newBest)
 
     verifyToday(total, apps)
     const success = total <= threshold.dailyLimitMinutes
@@ -145,9 +145,13 @@ export default function Verify() {
       pushToast(`${newlyUnlocked.icon} ${newlyUnlocked.label} 뱃지를 획득했어요!`)
     }
     if (profile.id) {
-      // Fire-and-forget: the local record is what drives the UI immediately;
-      // the server copy exists so admin can audit/delete it later.
-      api.submitVerification(profile.id, today, total, apps).catch(() => {})
+      try {
+        const { cashEarned } = await api.submitVerification(profile.id, today, total, apps)
+        if (cashEarned > 0) pushToast(`오늘 인증하고 캐시 ${cashEarned}개 받았어요 🪙`)
+      } catch {
+        // The local record already drives the UI — a failed server sync just
+        // means admin can't audit/delete this one and cash wasn't credited.
+      }
     }
   }
 

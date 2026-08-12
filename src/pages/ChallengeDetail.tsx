@@ -6,6 +6,7 @@ import { ApiError, type ApiChallenge } from '../lib/api'
 import { isFail, verifiedCounts, achievementRate } from '../lib/stats'
 import { minutesToLabel, todayISO } from '../lib/date'
 import { APP_CATALOG, customAppEntry, toBackgroundStyle } from '../state/seed'
+import { findBadge } from '../state/badges'
 import Avatar from '../components/Avatar'
 import AppIcon from '../components/AppIcon'
 import ChallengeAppearancePicker from '../components/ChallengeAppearancePicker'
@@ -47,6 +48,7 @@ export default function ChallengeDetail() {
   const navigate = useNavigate()
   const { profile, records, pushToast, refreshChallenges } = useStore()
   const [challenge, setChallenge] = useState<ApiChallenge | null>(null)
+  const [equippedBadges, setEquippedBadges] = useState<Record<string, string | null>>({})
   const [loading, setLoading] = useState(true)
   const [joining, setJoining] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -80,6 +82,19 @@ export default function ChallengeDetail() {
   }
 
   useEffect(load, [id])
+
+  // Equipped badges live on each user's own account, not in the participants
+  // snapshot stored on the challenge — fetched separately so it stays fresh
+  // instead of going stale the moment someone changes theirs.
+  const participantIds = challenge?.participants.map((p) => p.userId).join(',') ?? ''
+  useEffect(() => {
+    if (!challenge || challenge.participants.length === 0) return
+    api
+      .getUsersPublic(challenge.participants.map((p) => p.userId))
+      .then(({ users }) => setEquippedBadges(Object.fromEntries(users.map((u) => [u.id, u.equippedBadge]))))
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [participantIds])
 
   if (loading) return <p className="px-5 py-10 text-center text-sm text-ink-faint">불러오는 중…</p>
   if (!challenge) {
@@ -689,7 +704,14 @@ export default function ChallengeDetail() {
                     className={`flex items-center gap-3 rounded-xl px-2.5 py-2 ${p.isMe ? 'bg-primary-tint' : ''}`}
                   >
                     <span className="w-4 text-center text-xs font-bold text-ink-faint">{idx + 1}</span>
-                    <Avatar src={p.avatar} emoji={p.avatarEmoji || '🙂'} size={32} />
+                    <span className="relative shrink-0">
+                      <Avatar src={p.avatar} emoji={p.avatarEmoji || '🙂'} size={32} />
+                      {findBadge(equippedBadges[p.userId])?.icon && (
+                        <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border border-surface bg-surface text-[9px] shadow-pop">
+                          {findBadge(equippedBadges[p.userId])?.icon}
+                        </span>
+                      )}
+                    </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-ink">
                         {p.name}

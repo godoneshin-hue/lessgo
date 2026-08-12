@@ -7,7 +7,7 @@ import { asyncHandler } from '../asyncHandler.js'
 
 export const authRouter = Router()
 
-function toPublicUser(user) {
+export function toPublicUser(user) {
   const { passwordHash, ...publicUser } = user
   return publicUser
 }
@@ -148,6 +148,18 @@ authRouter.post(
     const inserted = await db.insertUser(user)
     logEvent('user.signup', `${name}님이 ${provider}로 가입했어요`, { userId: user.id })
     res.status(201).json({ user: toPublicUser(inserted), isNew: true })
+  }),
+)
+
+// Public, non-sensitive fields for a batch of users — used to show equipped
+// badges next to each participant in a group challenge's ranking list.
+authRouter.post(
+  '/users/public',
+  asyncHandler(async (req, res) => {
+    const { ids } = req.body ?? {}
+    if (!Array.isArray(ids) || ids.length === 0) return res.json({ users: [] })
+    const users = await db.findUsersByIds(ids)
+    res.json({ users: users.map((u) => ({ id: u.id, name: u.name, avatar: u.avatar, equippedBadge: u.equippedBadge })) })
   }),
 )
 

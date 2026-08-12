@@ -48,7 +48,30 @@ export interface ApiUser {
   oauthId: string | null
   inviteCode: string
   avatar: string
+  cash: number
+  equippedBadge: string | null
+  ownedBadges: string[]
   createdAt: string
+}
+
+export interface ApiPublicUser {
+  id: string
+  name: string
+  avatar: string
+  equippedBadge: string | null
+}
+
+export function getUsersPublic(ids: string[]) {
+  if (ids.length === 0) return Promise.resolve({ users: [] as ApiPublicUser[] })
+  return request<{ users: ApiPublicUser[] }>('/auth/users/public', { method: 'POST', body: JSON.stringify({ ids }) })
+}
+
+export function buyBadge(userId: string, badgeId: string) {
+  return request<{ user: ApiUser }>('/shop/buy', { method: 'POST', userId, body: JSON.stringify({ badgeId }) })
+}
+
+export function equipBadge(userId: string, badgeId: string | null) {
+  return request<{ user: ApiUser }>('/shop/equip', { method: 'POST', userId, body: JSON.stringify({ badgeId }) })
 }
 
 export function signup(payload: {
@@ -264,7 +287,7 @@ export function getVerification(userId: string, date: string) {
 }
 
 export function submitVerification(userId: string, date: string, usedMinutes: number, apps: ApiAppLimit[]) {
-  return request<{ verification: ApiVerification }>('/verifications', {
+  return request<{ verification: ApiVerification; cashEarned: number; cashTotal: number }>('/verifications', {
     method: 'POST',
     userId,
     body: JSON.stringify({ date, usedMinutes, apps }),

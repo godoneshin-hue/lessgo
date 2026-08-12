@@ -4,7 +4,8 @@ import { useStore } from '../state/store'
 import { bestStreak, currentStreak } from '../lib/stats'
 import { usePersonalChallenge } from '../lib/usePersonalChallenge'
 import { fileToAvatarDataUrl } from '../lib/image'
-import { STREAK_BADGES } from '../state/badges'
+import { ApiError } from '../lib/api'
+import { ALL_BADGES, findBadge, type BadgeDef } from '../state/badges'
 import Avatar from '../components/Avatar'
 import { CameraIcon, ChatIcon, ChevronRightIcon, FlagIcon } from '../components/icons'
 
@@ -16,24 +17,39 @@ const PREMIUM_FEATURES = [
 ]
 
 export default function Me() {
-  const { profile, records, pushToast, logout, updateAvatar, equippedBadge, setEquippedBadge } = useStore()
+  const { profile, records, pushToast, logout, updateAvatar, buyBadge, equipBadge } = useStore()
   const { personalChallenge } = usePersonalChallenge()
   const navigate = useNavigate()
   const [reminderOn, setReminderOn] = useState(true)
   const [challengeAlertOn, setChallengeAlertOn] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [busyBadge, setBusyBadge] = useState<string | null>(null)
   const threshold = personalChallenge ? { dailyLimitMinutes: personalChallenge.goalMinutes } : null
   const streak = threshold ? currentStreak(records, threshold) : 0
   const longestStreak = threshold ? bestStreak(records, threshold) : 0
-  // Guard against a badge that was equipped once but is no longer unlocked
-  // (shouldn't happen since badges never un-earn, but records can be wiped).
-  const equippedIcon =
-    equippedBadge !== null && longestStreak >= equippedBadge
-      ? STREAK_BADGES.find((b) => b.days === equippedBadge)?.icon
-      : undefined
+  const equippedIcon = findBadge(profile.equippedBadge)?.icon
 
-  function toggleEquip(days: number) {
-    setEquippedBadge(equippedBadge === days ? null : days)
+  async function handleEquip(id: string) {
+    setBusyBadge(id)
+    try {
+      await equipBadge(profile.equippedBadge === id ? null : id)
+    } catch {
+      pushToast('처리하지 못했어요. 다시 시도해주세요.')
+    } finally {
+      setBusyBadge(null)
+    }
+  }
+
+  async function handleBuy(badge: BadgeDef) {
+    setBusyBadge(badge.id)
+    try {
+      await buyBadge(badge.id)
+      pushToast(`${badge.icon} ${badge.label} 뱃지를 구매했어요!`)
+    } catch (err) {
+      pushToast(err instanceof ApiError ? err.message : '구매하지 못했어요.')
+    } finally {
+      setBusyBadge(null)
+    }
   }
 
   function handleLogout() {
@@ -87,37 +103,53 @@ export default function Me() {
       {personalChallenge && (
         <section className="rounded-3xl bg-surface p-5 shadow-card">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">연속 뱃지</p>
-            <p className="text-xs font-semibold text-ink-soft">최고 기록 {longestStreak}일</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">뱃지</p>
+            <p className="text-xs font-bold text-gold-ink">🪙 {profile.cash.toLocaleString()}캐시</p>
           </div>
-          <div className="mt-3 grid grid-cols-5 gap-2">
-            {STREAK_BADGES.map((b) => {
-              const unlocked = longestStreak >= b.days
-              const equipped = equippedBadge === b.days
+          <p className="mt-0.5 text-[11px] text-ink-faint">최고 기록 {longestStreak}일 연속 · 매일 인증하면 캐시를 받아요</p>
+          <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-4">
+            {ALL_BADGES.map((b) => {
+              const unlocked = b.kind === 'streak' ? longestStreak >= (b.days ?? Infinity) : profile.ownedBadges.includes(b.id)
+              const equipped = profile.equippedBadge === b.id
+              const canAfford = b.price !== undefined && profile.cash >= b.price
+              const busy = busyBadge === b.id
+
               return (
-                <button
-                  key={b.days}
-                  type="button"
-                  disabled={!unlocked}
-                  onClick={() => toggleEquip(b.days)}
-                  className="flex flex-col items-center gap-1.5 disabled:cursor-not-allowed"
-                >
-                  <span
-                    className={`flex h-11 w-11 items-center justify-center rounded-full text-xl transition-colors ${
-                      unlocked ? 'bg-primary-tint' : 'bg-bg grayscale opacity-40'
-                    } ${equipped ? 'ring-2 ring-primary ring-offset-1 ring-offset-surface' : ''}`}
+                <div key={b.id} className="flex flex-col items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={!unlocked || busy}
+                    onClick={() => handleEquip(b.id)}
+                    className="flex flex-col items-center gap-1.5 disabled:cursor-not-allowed"
                   >
-                    {b.icon}
-                  </span>
-                  <span className={`text-center text-[10px] font-bold ${unlocked ? 'text-ink' : 'text-ink-faint'}`}>
-                    {b.days}일
-                  </span>
-                  {unlocked && (
+                    <span
+                      className={`flex h-11 w-11 items-center justify-center rounded-full text-xl transition-colors ${
+                        unlocked ? 'bg-primary-tint' : 'bg-bg grayscale opacity-40'
+                      } ${equipped ? 'ring-2 ring-primary ring-offset-1 ring-offset-surface' : ''}`}
+                    >
+                      {b.icon}
+                    </span>
+                    <span className={`text-center text-[10px] font-bold ${unlocked ? 'text-ink' : 'text-ink-faint'}`}>
+                      {b.kind === 'streak' ? `${b.days}일` : b.label}
+                    </span>
+                  </button>
+                  {unlocked ? (
                     <span className={`text-center text-[9px] font-bold ${equipped ? 'text-primary-ink' : 'text-ink-faint'}`}>
                       {equipped ? '사용 중' : '사용하기'}
                     </span>
+                  ) : b.kind === 'shop' ? (
+                    <button
+                      type="button"
+                      disabled={!canAfford || busy}
+                      onClick={() => handleBuy(b)}
+                      className="rounded-full bg-primary-tint px-2 py-0.5 text-[9px] font-bold text-primary-ink disabled:bg-line disabled:text-ink-faint"
+                    >
+                      {b.price}캐시
+                    </button>
+                  ) : (
+                    <span className="text-[9px] text-ink-faint">잠김</span>
                   )}
-                </button>
+                </div>
               )
             })}
           </div>

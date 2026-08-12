@@ -23,6 +23,9 @@ function rowToUser(row) {
     passwordHash: row.password_hash,
     inviteCode: row.invite_code,
     avatar: row.avatar,
+    cash: row.cash,
+    equippedBadge: row.equipped_badge ?? null,
+    ownedBadges: row.owned_badges ?? [],
     createdAt: row.created_at.toISOString(),
   }
 }
@@ -146,6 +149,31 @@ export const db = {
   async deleteUser(id) {
     const { rowCount } = await pool.query('delete from users where id = $1', [id])
     return rowCount > 0
+  },
+  async findUsersByIds(ids) {
+    if (ids.length === 0) return []
+    const { rows } = await pool.query('select * from users where id = any($1::text[])', [ids])
+    return rows.map(rowToUser)
+  },
+  async addCash(userId, amount) {
+    const { rows } = await pool.query(`update users set cash = cash + $2 where id = $1 returning *`, [userId, amount])
+    return rowToUser(rows[0])
+  },
+  // Atomic conditional update: only succeeds if the user still has enough
+  // cash and doesn't already own the badge — the route checks these first
+  // for a specific error message, this is just the race-safe final guard.
+  async buyBadge(userId, badgeId, price) {
+    const { rows } = await pool.query(
+      `update users set cash = cash - $2, owned_badges = owned_badges || $3::jsonb
+       where id = $1 and cash >= $2 and not (owned_badges @> $3::jsonb)
+       returning *`,
+      [userId, price, JSON.stringify([badgeId])],
+    )
+    return rowToUser(rows[0])
+  },
+  async setEquippedBadge(userId, badgeId) {
+    const { rows } = await pool.query(`update users set equipped_badge = $2 where id = $1 returning *`, [userId, badgeId])
+    return rowToUser(rows[0])
   },
 
   async getChallenges() {

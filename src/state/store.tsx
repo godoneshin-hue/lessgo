@@ -23,6 +23,9 @@ function toProfile(user: ApiUser): Profile {
     inviteCode: user.inviteCode,
     avatar: user.avatar,
     emoji: pickAvatarEmoji(user.name || user.phone || user.email),
+    cash: user.cash,
+    equippedBadge: user.equippedBadge,
+    ownedBadges: user.ownedBadges,
   }
 }
 
@@ -58,8 +61,8 @@ interface StoreValue {
   pushToast: (message: string) => void
   challenges: ApiChallenge[] | null
   refreshChallenges: () => Promise<void>
-  equippedBadge: number | null
-  setEquippedBadge: (days: number | null) => void
+  buyBadge: (badgeId: string) => Promise<void>
+  equipBadge: (badgeId: string | null) => Promise<void>
 }
 
 const StoreContext = createContext<StoreValue | null>(null)
@@ -71,7 +74,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [justAuthenticated, setJustAuthenticated] = useState(false)
   const [challenges, setChallenges] = useState<ApiChallenge[] | null>(null)
-  const [equippedBadge, setEquippedBadge] = usePersistentState<number | null>('lessgo:equippedBadge', null)
 
   const today = todayISO()
   const todayRecord = records.find((r) => r.date === today) ?? { date: today, usedMinutes: null, verified: false }
@@ -186,6 +188,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  async function buyBadge(badgeId: string) {
+    const { user } = await api.buyBadge(profile.id, badgeId)
+    setProfile(toProfile(user))
+  }
+
+  async function equipBadge(badgeId: string | null) {
+    const { user } = await api.equipBadge(profile.id, badgeId)
+    setProfile(toProfile(user))
+  }
+
   const value: StoreValue = {
     isAuthenticated,
     profile,
@@ -204,8 +216,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     pushToast,
     challenges,
     refreshChallenges,
-    equippedBadge,
-    setEquippedBadge,
+    buyBadge,
+    equipBadge,
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
