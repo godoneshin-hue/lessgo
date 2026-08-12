@@ -4,11 +4,12 @@ import { useStore } from '../state/store'
 import * as api from '../lib/api'
 import { ApiError, type ApiChallenge } from '../lib/api'
 import { isFail, verifiedCounts, achievementRate } from '../lib/stats'
-import { minutesToLabel } from '../lib/date'
+import { minutesToLabel, todayISO } from '../lib/date'
 import { APP_CATALOG, customAppEntry, toBackgroundStyle } from '../state/seed'
 import Avatar from '../components/Avatar'
 import AppIcon from '../components/AppIcon'
 import ChallengeAppearancePicker from '../components/ChallengeAppearancePicker'
+import VerificationCalendar from '../components/VerificationCalendar'
 import { ChevronRightIcon, LinkIcon, XIcon } from '../components/icons'
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -101,6 +102,7 @@ export default function ChallengeDetail() {
   const threshold = { dailyLimitMinutes: challenge.goalMinutes }
   const sinceDate = challenge.createdAt.slice(0, 10)
   const scoped = records.filter((r) => r.date >= sinceDate)
+  const todayRecord = records.find((r) => r.date === todayISO())
   const { successDays, failDays } = verifiedCounts(scoped, threshold)
   const myRate = achievementRate(scoped, threshold, Math.max(scoped.length, 1))
   const myTodayUsed = scoped.find((r) => r.date === sinceDate)?.usedMinutes ?? null
@@ -641,15 +643,24 @@ export default function ChallengeDetail() {
           </p>
           {challenge.appLimits.length > 0 && (
             <ul className="mt-3 divide-y divide-line">
-              {challenge.appLimits.map((a) => (
-                <li key={a.name} className="flex items-center gap-3 py-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-bg text-base">
-                    <AppIcon icon={a.icon} className="h-5 w-5" />
-                  </span>
-                  <span className="flex-1 text-sm font-semibold text-ink">{a.name}</span>
-                  <span className="text-sm font-bold tabular-nums text-ink-soft">{minutesToLabel(a.minutes)}</span>
-                </li>
-              ))}
+              {challenge.appLimits.map((a) => {
+                const used = todayRecord?.apps?.find((u) => u.name === a.name)?.minutes
+                const over = used !== undefined && used > a.minutes
+                return (
+                  <li key={a.name} className="flex items-center gap-3 py-2">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-bg text-base">
+                      <AppIcon icon={a.icon} className="h-5 w-5" />
+                    </span>
+                    <span className="flex-1 text-sm font-semibold text-ink">{a.name}</span>
+                    <span className="text-sm font-bold tabular-nums text-ink-soft">
+                      {used !== undefined && (
+                        <span className={over ? 'text-warn-text' : 'text-success-text'}>{minutesToLabel(used)} / </span>
+                      )}
+                      {minutesToLabel(a.minutes)}
+                    </span>
+                  </li>
+                )
+              })}
             </ul>
           )}
         </section>
@@ -724,6 +735,8 @@ export default function ChallengeDetail() {
             </div>
           </section>
         )}
+
+        {isMember && <VerificationCalendar records={scoped} threshold={threshold} sinceDate={sinceDate} />}
 
         {isMember && challenge.stakeType && challenge.donationAmount > 0 && (
           <section className="rounded-3xl bg-surface p-5 shadow-card">

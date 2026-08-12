@@ -22,6 +22,7 @@ export default function Verify() {
   const [analyzing, setAnalyzing] = useState(false)
   const [totalFromAnalysis, setTotalFromAnalysis] = useState<number | null>(null)
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
+  const [missingApps, setMissingApps] = useState<string[]>([])
 
   const today = todayISO()
 
@@ -103,18 +104,22 @@ export default function Verify() {
         return match ? { ...a, minutes: match.minutes } : a
       }))
       setTotalFromAnalysis(result.totalMinutes)
-      setHasAnalyzed(true)
 
       const missingNames = trackedAppNames.filter((name) => !result.apps.some((r) => r.name === name))
+      setMissingApps(missingNames)
 
       if (result.dateMatches === false) {
         pushToast('오늘 날짜 스크린샷이 아닌 것 같아요. 오늘 사용 시간이 맞는지 확인해주세요.')
       }
       if (missingNames.length > 0) {
-        const list = missingNames.join(', ')
-        pushToast(`${list}이 없어요. ${list}이 포함된 스크린샷을 올려주세요.`)
-      } else if (result.dateMatches !== false) {
-        pushToast('사진 분석이 끝났어요.')
+        // Some tracked apps never showed up in any uploaded screenshot — block
+        // submission rather than letting a partial (silently-zeroed) result
+        // through, since the persistent banner below is the real signal here.
+        setHasAnalyzed(false)
+        pushToast(`${missingNames.join(', ')} 사용 시간이 없어요. 스크린샷을 추가로 올려주세요.`)
+      } else {
+        setHasAnalyzed(true)
+        if (result.dateMatches !== false) pushToast('사진 분석이 끝났어요.')
       }
     } catch (err) {
       pushToast(err instanceof ApiError ? err.message : '사진을 분석하지 못했어요.')
@@ -222,6 +227,14 @@ export default function Verify() {
         >
           {analyzing ? '분석 중…' : '사진으로 분석하기'}
         </button>
+
+        {missingApps.length > 0 && (
+          <div className="mt-3 rounded-xl bg-warn-tint px-3.5 py-3 text-xs font-semibold text-warn-text">
+            <span className="font-bold">{missingApps.join(', ')}</span> 사용 시간이 스크린샷에 없어요.{' '}
+            <span className="font-bold">{missingApps.join(', ')}</span>이 포함된 스크린샷을 추가로 올리고 다시
+            분석해주세요.
+          </div>
+        )}
       </section>
 
       <section className="mt-4 rounded-3xl bg-surface p-5 shadow-card">
