@@ -61,6 +61,11 @@ jobs:
           keyPassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           EOF
 
+      # gradlew was committed from Windows, which doesn't track the
+      # executable bit, so Linux sees it as a plain non-executable file.
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
       - name: Build release APK
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
