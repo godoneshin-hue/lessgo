@@ -1,13 +1,19 @@
 const WEEKDAYS_KR = ['일', '월', '화', '수', '목', '금', '토']
 
 export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }
 
+// Pure Y/M/D arithmetic done entirely in UTC (Date.UTC in, setUTCDate,
+// toISOString out) — never mixed with local-time parsing/getters, which is
+// what silently shifted every date back by one day for any UTC+ timezone
+// (e.g. KST, UTC+9) when this rounded through a local `Date` + `.toISOString()`.
 export function addDays(iso: string, delta: number): string {
-  const d = new Date(iso + 'T00:00:00')
-  d.setDate(d.getDate() + delta)
-  return d.toISOString().slice(0, 10)
+  const [y, m, d] = iso.split('-').map(Number)
+  const date = new Date(Date.UTC(y, m - 1, d))
+  date.setUTCDate(date.getUTCDate() + delta)
+  return date.toISOString().slice(0, 10)
 }
 
 export function weekdayKr(iso: string): string {
