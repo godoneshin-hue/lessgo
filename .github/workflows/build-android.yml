@@ -22,15 +22,22 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
 
+      # `npm ci` strictly installs only what's pinned in package-lock.json,
+      # including which platform-specific optional binary (e.g. rollup's
+      # native addon) it recorded — since this lockfile gets regenerated on
+      # whatever OS a contributor last ran `npm install` on, that pinned
+      # binary won't always match this Linux runner. `npm install` re-resolves
+      # optional deps for the current platform instead of trusting the lock
+      # (see https://github.com/npm/cli/issues/4828).
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build web assets
         run: npm run build
