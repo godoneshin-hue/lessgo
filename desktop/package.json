@@ -1,0 +1,34 @@
+{
+  "name": "lessgo-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LessGo desktop wrapper — loads the live web app in a native window.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.lessgo.app",
+    "productName": "LessGo",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "icon.ico"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^38.4.0",
+    "electron-builder": "^26.0.15"
+  }
+}

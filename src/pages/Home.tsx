@@ -3,6 +3,7 @@ import { useStore } from '../state/store'
 import { achievementRate, currentStreak, isSuccess } from '../lib/stats'
 import { minutesToLabel } from '../lib/date'
 import { usePersonalChallenge } from '../lib/usePersonalChallenge'
+import { DAILY_VERIFY_CASH, findBadge } from '../state/badges'
 import ProgressRing from '../components/ProgressRing'
 import Avatar from '../components/Avatar'
 import { ChevronRightIcon, FlagIcon, SettingsIcon } from '../components/icons'
@@ -18,17 +19,31 @@ export default function Home() {
   const success = threshold && verifiedToday && isSuccess(todayRecord, threshold)
 
   const otherChallenges = challenges?.filter((c) => c.id !== personalChallenge?.id) ?? []
+  const equippedIcon = findBadge(profile.equippedBadge)?.icon
 
   return (
     <div className="space-y-4 px-5 pb-6 pt-1">
       <div className="flex items-center gap-3">
-        <Avatar src={profile.avatar} emoji={profile.emoji} size={46} />
-        <div>
+        <span className="relative shrink-0">
+          <Avatar src={profile.avatar} emoji={profile.emoji} size={46} />
+          {equippedIcon && (
+            <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-bg bg-surface text-xs shadow-pop">
+              {equippedIcon}
+            </span>
+          )}
+        </span>
+        <div className="flex-1">
           <h1 className="font-display text-[19px] font-extrabold leading-tight text-ink">
             안녕하세요, {profile.name}님
           </h1>
           <p className="mt-0.5 text-[13px] text-ink-soft">오늘도 가볍게, 스크린타임을 지켜봐요.</p>
         </div>
+        <Link
+          to="/me"
+          className="flex shrink-0 items-center gap-1 rounded-full bg-gold-tint px-3 py-1.5 text-xs font-bold text-gold-ink"
+        >
+          🪙 {profile.cash.toLocaleString()}
+        </Link>
       </div>
 
       {!personalChallenge ? (
@@ -67,7 +82,10 @@ export default function Home() {
           <div className="mt-4 border-t border-line pt-4">
             {!verifiedToday && (
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-ink-soft">아직 인증하지 않았어요</p>
+                <div>
+                  <p className="text-sm font-semibold text-ink-soft">아직 인증하지 않았어요</p>
+                  <p className="mt-0.5 text-xs font-bold text-gold-ink">🪙 인증하면 캐시 {DAILY_VERIFY_CASH}개 받아요</p>
+                </div>
                 <Link
                   to="/verify"
                   className="shrink-0 rounded-full bg-gradient-primary-soft px-4 py-2 text-[13px] font-bold text-white shadow-glow transition-transform active:scale-95"

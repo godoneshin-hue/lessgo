@@ -1,0 +1,56 @@
+name: Build iOS app
+
+# Builds the iOS app on GitHub's macOS runner (Xcode/iOS builds only work on
+# real Apple hardware — this is Apple's own requirement, not a choice we
+# made). Run manually whenever the native shell changes.
+#
+# IMPORTANT — this currently builds an UNSIGNED SIMULATOR build only.
+# Unlike Android, iOS does not allow installing an app on a real iPhone (or
+# submitting to the App Store) without Apple code signing, which requires an
+# active Apple Developer Program membership ($99/year). Once that's set up:
+#   1. Create a Distribution certificate + App Store provisioning profile in
+#      the Apple Developer portal
+#   2. Add them as secrets (APPLE_CERTIFICATE_BASE64, APPLE_CERTIFICATE_PASSWORD,
+#      APPLE_PROVISIONING_PROFILE_BASE64, APPLE_TEAM_ID)
+#   3. Replace the "Build for iOS Simulator" step below with an
+#      `xcodebuild archive` + `xcodebuild -exportArchive` step that signs
+#      with those secrets, producing a real .ipa
+# Until then, this workflow just proves the build pipeline itself works.
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: |
+          rm -f package-lock.json
+          npm install
+
+      - name: Build web assets
+        run: npm run build
+
+      - name: Sync Capacitor iOS project
+        run: npx cap sync ios
+
+      # No signing identity available yet (see note above) — this produces an
+      # unsigned .app that only runs in the iOS Simulator (macOS-only), not
+      # something installable on a real device.
+      - name: Build for iOS Simulator
+        working-directory: ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App \
+            -sdk iphonesimulator -configuration Release \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lessgo-ios-simulator-build
+          path: ios/App/build/Build/Products/Release-iphonesimulator/App.app
+          retention-days: 30
