@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import ToastStack from './ToastStack'
+import UpdateBanner from './UpdateBanner'
 
 export default function AuthLayout() {
   return (
@@ -18,6 +19,7 @@ export default function AuthLayout() {
           <Outlet />
         </main>
         <ToastStack bottomOffset={24} />
+        <UpdateBanner />
       </div>
     </div>
   )

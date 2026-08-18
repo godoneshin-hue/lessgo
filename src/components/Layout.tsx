@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import TopBar from './TopBar'
 import BottomNav from './BottomNav'
 import ToastStack from './ToastStack'
+import UpdateBanner from './UpdateBanner'
 
 export default function Layout() {
   return (
@@ -22,6 +23,7 @@ export default function Layout() {
         </main>
         <BottomNav />
         <ToastStack />
+        <UpdateBanner />
       </div>
     </div>
   )

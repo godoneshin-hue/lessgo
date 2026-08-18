@@ -15,8 +15,9 @@ import {
 import { useStore } from '../state/store'
 import { achievementRate, averageUsage, currentStreak, isSuccess } from '../lib/stats'
 import { usePersonalChallenge } from '../lib/usePersonalChallenge'
-import { formatKoreanShort, minutesToLabel, weekdayKr } from '../lib/date'
+import { formatKoreanShort, minutesToLabel, todayISO, weekdayKr } from '../lib/date'
 import { ChartIcon } from '../components/icons'
+import VerificationCalendar from '../components/VerificationCalendar'
 
 const SUCCESS = '#0CA30C'
 const WARN = '#EC835A'
@@ -53,6 +54,11 @@ export default function Stats() {
   }, [records, threshold?.dailyLimitMinutes])
 
   const yMax = Math.max(threshold?.dailyLimitMinutes ?? 180, ...chartData.map((d) => d.minutes)) + 30
+
+  // Not scoped to the current personal challenge's start date on purpose —
+  // if the user replaced an old solo challenge with a new one, records from
+  // the old one should still show up here instead of disappearing.
+  const earliestDate = records.reduce((min, r) => (r.date < min ? r.date : min), todayISO())
 
   if (loading) {
     return <p className="px-5 py-10 text-center text-sm text-ink-faint">불러오는 중…</p>
@@ -190,6 +196,8 @@ export default function Stats() {
           </div>
         )}
       </section>
+
+      {threshold && <VerificationCalendar records={records} threshold={threshold} sinceDate={earliestDate} />}
     </div>
   )
 }

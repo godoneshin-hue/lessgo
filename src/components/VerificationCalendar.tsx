@@ -31,34 +31,63 @@ export default function VerificationCalendar({
   sinceDate: string
 }) {
   const [expanded, setExpanded] = useState(false)
+  const [monthOffset, setMonthOffset] = useState(0)
   const today = todayISO()
   const todayDate = new Date(`${today}T00:00:00`)
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(today, -todayDate.getDay() + i))
 
+  const viewDate = new Date(todayDate.getFullYear(), todayDate.getMonth() + monthOffset, 1)
+
   const monthDays = (() => {
-    const firstOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1)
+    const firstOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1)
     const firstIso = firstOfMonth.toISOString().slice(0, 10)
     const startOffset = -firstOfMonth.getDay()
-    const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate()
+    const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate()
     const totalCells = Math.ceil((daysInMonth - startOffset) / 7) * 7
     return Array.from({ length: totalCells }, (_, i) => addDays(firstIso, startOffset + i))
   })()
 
   const days = expanded ? monthDays : weekDays
 
+  function toggleExpanded() {
+    setMonthOffset(0)
+    setExpanded((v) => !v)
+  }
+
   return (
     <section className="mb-4 rounded-3xl bg-surface p-5 shadow-card">
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">인증 캘린더</p>
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="text-xs font-bold text-primary-ink"
-        >
+        <button type="button" onClick={toggleExpanded} className="text-xs font-bold text-primary-ink">
           {expanded ? '이번 주만 보기' : '한 달 보기'}
         </button>
       </div>
+
+      {expanded && (
+        <div className="mt-2 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setMonthOffset((o) => o - 1)}
+            aria-label="이전 달"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft hover:text-primary-ink"
+          >
+            ◀
+          </button>
+          <span className="text-xs font-bold tabular-nums text-ink">
+            {viewDate.getFullYear()}년 {viewDate.getMonth() + 1}월
+          </span>
+          <button
+            type="button"
+            onClick={() => setMonthOffset((o) => Math.min(0, o + 1))}
+            disabled={monthOffset >= 0}
+            aria-label="다음 달"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft hover:text-primary-ink disabled:opacity-30"
+          >
+            ▶
+          </button>
+        </div>
+      )}
 
       <div className="mt-3 grid grid-cols-7 gap-y-2 text-center">
         {WEEKDAY_LABELS.map((w) => (
@@ -69,7 +98,7 @@ export default function VerificationCalendar({
         {days.map((date) => {
           const status = dayStatus(records, date, threshold, sinceDate, today)
           const dayNum = Number(date.slice(8, 10))
-          const sameMonth = !expanded || new Date(`${date}T00:00:00`).getMonth() === todayDate.getMonth()
+          const sameMonth = !expanded || new Date(`${date}T00:00:00`).getMonth() === viewDate.getMonth()
           const isToday = date === today
           return (
             <div key={date} className="flex items-center justify-center py-0.5">

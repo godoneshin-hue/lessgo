@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { usePersistentState } from '../lib/storage'
 import { EMPTY_PROFILE, buildEmptyRecords, pickAvatarEmoji } from './seed'
 import { todayISO } from '../lib/date'
+import { applyPwaUpdate, initPwaUpdate } from '../lib/pwaUpdate'
 import * as api from '../lib/api'
 import type { ApiChallenge, ApiUser } from '../lib/api'
 import type { DayRecord, Profile } from './types'
@@ -63,6 +64,8 @@ interface StoreValue {
   refreshChallenges: () => Promise<void>
   buyBadge: (badgeId: string) => Promise<void>
   equipBadge: (badgeId: string | null) => Promise<void>
+  updateAvailable: boolean
+  applyUpdate: () => void
 }
 
 const StoreContext = createContext<StoreValue | null>(null)
@@ -74,6 +77,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [justAuthenticated, setJustAuthenticated] = useState(false)
   const [challenges, setChallenges] = useState<ApiChallenge[] | null>(null)
+  const [updateAvailable, setUpdateAvailable] = useState(false)
+
+  useEffect(() => {
+    initPwaUpdate(() => setUpdateAvailable(true))
+  }, [])
 
   const today = todayISO()
   const todayRecord = records.find((r) => r.date === today) ?? { date: today, usedMinutes: null, verified: false }
@@ -218,6 +226,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     refreshChallenges,
     buyBadge,
     equipBadge,
+    updateAvailable,
+    applyUpdate: applyPwaUpdate,
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
