@@ -97,7 +97,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const { challenges } = await api.listMyChallenges(profile.id)
       setChallenges(challenges)
     } catch {
-      // Keep whatever was cached before — a transient failure shouldn't wipe it.
+      // A transient failure (e.g. the backend waking up from an idle sleep)
+      // shouldn't wipe an already-successful load. But if this was the very
+      // first attempt, `challenges` is still null — every page gated on
+      // "loading = challenges === null" (Stats, Challenges, Verify) would be
+      // stuck on "불러오는 중" forever with no retry. Try again once instead.
+      if (challenges === null) {
+        window.setTimeout(refreshChallenges, 3000)
+      }
     }
   }
 
