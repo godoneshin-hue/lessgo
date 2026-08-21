@@ -26,6 +26,20 @@ function rowToUser(row) {
     cash: row.cash,
     equippedBadge: row.equipped_badge ?? null,
     ownedBadges: row.owned_badges ?? [],
+    isPremium: row.is_premium,
+    createdAt: row.created_at.toISOString(),
+  }
+}
+
+function rowToPayment(row) {
+  if (!row) return null
+  return {
+    id: row.id,
+    userId: row.user_id,
+    orderId: row.order_id,
+    paymentKey: row.payment_key,
+    amount: row.amount,
+    status: row.status,
     createdAt: row.created_at.toISOString(),
   }
 }
@@ -336,5 +350,23 @@ export const db = {
   async getAllFeedback() {
     const { rows } = await pool.query('select * from feedback order by created_at desc limit 500')
     return rows.map(rowToFeedback)
+  },
+
+  async findPaymentByOrderId(orderId) {
+    const { rows } = await pool.query('select * from payments where order_id = $1', [orderId])
+    return rowToPayment(rows[0])
+  },
+  async insertPayment(p) {
+    const { rows } = await pool.query(
+      `insert into payments (id, user_id, order_id, payment_key, amount, status, raw, created_at)
+       values ($1,$2,$3,$4,$5,$6,$7,$8)
+       returning *`,
+      [p.id, p.userId, p.orderId, p.paymentKey, p.amount, p.status, JSON.stringify(p.raw ?? {}), p.createdAt],
+    )
+    return rowToPayment(rows[0])
+  },
+  async setPremium(userId, isPremium) {
+    const { rows } = await pool.query(`update users set is_premium = $2 where id = $1 returning *`, [userId, isPremium])
+    return rowToUser(rows[0])
   },
 }

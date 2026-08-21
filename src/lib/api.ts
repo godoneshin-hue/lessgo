@@ -51,6 +51,7 @@ export interface ApiUser {
   cash: number
   equippedBadge: string | null
   ownedBadges: string[]
+  isPremium: boolean
   createdAt: string
 }
 
@@ -72,6 +73,21 @@ export function buyBadge(userId: string, badgeId: string) {
 
 export function equipBadge(userId: string, badgeId: string | null) {
   return request<{ user: ApiUser }>('/shop/equip', { method: 'POST', userId, body: JSON.stringify({ badgeId }) })
+}
+
+export function createPaymentOrder(userId: string) {
+  return request<{ orderId: string; amount: number; orderName: string }>('/payments/order', {
+    method: 'POST',
+    userId,
+  })
+}
+
+export function confirmPayment(userId: string, paymentKey: string, orderId: string, amount: number) {
+  return request<{ user: ApiUser }>('/payments/confirm', {
+    method: 'POST',
+    userId,
+    body: JSON.stringify({ paymentKey, orderId, amount }),
+  })
 }
 
 export function signup(payload: {

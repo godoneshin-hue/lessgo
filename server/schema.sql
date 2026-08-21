@@ -74,13 +74,26 @@ create table if not exists feedback (
   created_at timestamptz not null default now()
 );
 
+create table if not exists payments (
+  id text primary key,
+  user_id text not null references users(id) on delete cascade,
+  order_id text unique not null,
+  payment_key text not null,
+  amount int not null,
+  status text not null default 'confirmed',
+  raw jsonb not null default '{}',
+  created_at timestamptz not null default now()
+);
+
 create index if not exists idx_challenges_creator on challenges(creator_id);
 create index if not exists idx_logs_created_at on logs(created_at desc);
 create index if not exists idx_verifications_user on verifications(user_id);
 create index if not exists idx_feedback_created_at on feedback(created_at desc);
+create index if not exists idx_payments_user on payments(user_id);
 
 -- Migrations for columns added after the tables above already existed in
 -- production (CREATE TABLE IF NOT EXISTS won't retrofit an existing table).
 alter table users add column if not exists cash int not null default 0;
 alter table users add column if not exists equipped_badge text;
 alter table users add column if not exists owned_badges jsonb not null default '[]';
+alter table users add column if not exists is_premium boolean not null default false;

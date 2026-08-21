@@ -17,6 +17,7 @@
     "@capacitor/core": "^8.5.0",
     "@capacitor/ios": "^8.5.0",
     "@react-oauth/google": "^0.13.5",
+    "@tosspayments/payment-widget-sdk": "^0.12.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

@@ -27,6 +27,7 @@ function toProfile(user: ApiUser): Profile {
     cash: user.cash,
     equippedBadge: user.equippedBadge,
     ownedBadges: user.ownedBadges,
+    isPremium: user.isPremium,
   }
 }
 
@@ -64,6 +65,7 @@ interface StoreValue {
   refreshChallenges: () => Promise<void>
   buyBadge: (badgeId: string) => Promise<void>
   equipBadge: (badgeId: string | null) => Promise<void>
+  confirmPayment: (paymentKey: string, orderId: string, amount: number) => Promise<void>
   updateAvailable: boolean
   applyUpdate: () => void
 }
@@ -213,6 +215,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setProfile(toProfile(user))
   }
 
+  async function confirmPayment(paymentKey: string, orderId: string, amount: number) {
+    const { user } = await api.confirmPayment(profile.id, paymentKey, orderId, amount)
+    setProfile(toProfile(user))
+  }
+
   const value: StoreValue = {
     isAuthenticated,
     profile,
@@ -233,6 +240,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     refreshChallenges,
     buyBadge,
     equipBadge,
+    confirmPayment,
     updateAvailable,
     applyUpdate: applyPwaUpdate,
   }

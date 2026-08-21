@@ -15,6 +15,8 @@ import ChallengeDetail from './pages/ChallengeDetail'
 import Stats from './pages/Stats'
 import Me from './pages/Me'
 import Feedback from './pages/Feedback'
+import Premium from './pages/Premium'
+import { PremiumFail, PremiumSuccess } from './pages/PremiumResult'
 import Admin from './pages/Admin'
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -80,6 +82,9 @@ export default function App() {
           <Route path="/stats" element={<Stats />} />
           <Route path="/me" element={<Me />} />
           <Route path="/feedback" element={<Feedback />} />
+          <Route path="/premium" element={<Premium />} />
+          <Route path="/premium/success" element={<PremiumSuccess />} />
+          <Route path="/premium/fail" element={<PremiumFail />} />
         </Route>
 
         <Route path="/admin" element={<Admin />} />

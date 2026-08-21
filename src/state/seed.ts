@@ -27,6 +27,7 @@ export const EMPTY_PROFILE: Profile = {
   cash: 0,
   equippedBadge: null,
   ownedBadges: [],
+  isPremium: false,
 }
 
 export const APP_CATALOG: { name: string; icon: string }[] = [

@@ -173,13 +173,18 @@ export default function Me() {
             </div>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={() => pushToast('프로토타입에서는 결제가 지원되지 않아요')}
-          className="mt-4 w-full rounded-xl bg-white py-2.5 text-sm font-extrabold text-primary-ink active:scale-[0.99]"
-        >
-          월 3,900원으로 시작하기
-        </button>
+        {profile.isPremium ? (
+          <p className="mt-4 w-full rounded-xl bg-white/15 py-2.5 text-center text-sm font-extrabold">
+            ✓ 이미 프리미엄이에요
+          </p>
+        ) : (
+          <Link
+            to="/premium"
+            className="mt-4 block w-full rounded-xl bg-white py-2.5 text-center text-sm font-extrabold text-primary-ink active:scale-[0.99]"
+          >
+            월 3,900원으로 시작하기
+          </Link>
+        )}
       </section>
 
       <button

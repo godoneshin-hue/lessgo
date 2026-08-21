@@ -25,4 +25,5 @@ export interface Profile {
   cash: number
   equippedBadge: string | null
   ownedBadges: string[]
+  isPremium: boolean
 }
