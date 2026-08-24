@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import { Router, raw } from 'express'
 import { nanoid } from 'nanoid'
 import { db } from '../db.js'
 import { logEvent } from '../log.js'
@@ -52,14 +52,28 @@ verifyRouter.post(
 // screenshot straight to this endpoint) that can't run the normal two-step
 // Verify.tsx flow — figures out the user's tracked apps itself instead of
 // requiring the caller to already know them.
+//
+// Accepts two body shapes so the Shortcut itself can stay dead simple:
+//   1. raw image bytes (Content-Type: image/*) — the Shortcuts app's "URL
+//      콘텐츠 가져오기" action can set its body straight to a photo variable
+//      with zero extra steps (no Base64 Encode action, no JSON building).
+//   2. { images: [dataUrl, ...] } — what the web app itself sends.
 verifyRouter.post(
   '/quick',
+  raw({ type: 'image/*', limit: '15mb' }),
   asyncHandler(async (req, res) => {
     const userId = req.header('x-user-id')
     const user = userId && (await db.findUserById(userId))
     if (!user) return res.status(401).json({ error: '로그인이 필요해요.' })
 
-    const { images } = req.body ?? {}
+    let images
+    if (Buffer.isBuffer(req.body) && req.body.length > 0) {
+      const mimeType = req.is('image/*') || 'image/jpeg'
+      images = [`data:${mimeType};base64,${req.body.toString('base64')}`]
+    } else {
+      images = req.body?.images
+    }
+
     if (!Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ error: '분석할 사진이 없어요.' })
     }
