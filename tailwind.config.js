@@ -4,20 +4,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Rebrand off the generic "cream + SaaS blue" pair (this exact
-        // combination is one of the most common tells for an AI-templated
-        // look) toward a warm coral/tangerine identity that actually fits a
-        // teen challenge app — more energy, less corporate dashboard.
-        bg: '#FBF3EF',
+        // Blue, per direct request — kept the neutral cool (not the old
+        // yellow-cream) so it doesn't recreate the exact cream+blue combo
+        // that reads as AI-templated; the blue itself is a deeper, more
+        // saturated tone than the original pastel SaaS blue.
+        bg: '#F3F5FA',
         surface: '#FFFFFF',
-        ink: '#2A1810',
-        'ink-soft': '#6E5148',
-        'ink-faint': '#7C6259',
-        primary: '#FF7A1F',
-        'primary-light': '#FFA05C',
-        'primary-ink': '#A84A0A',
-        'primary-deep': '#7A3505',
-        'primary-tint': '#FFE8D6',
+        ink: '#151A24',
+        'ink-soft': '#4B5567',
+        'ink-faint': '#5E687A',
+        primary: '#2E5FE8',
+        'primary-light': '#6E93F5',
+        'primary-ink': '#1E3FA8',
+        'primary-deep': '#132B7A',
+        'primary-tint': '#E1E9FC',
         success: '#1F7A4D',
         'success-text': '#155A3A',
         'success-tint': '#DFEEE3',
@@ -27,7 +27,7 @@ export default {
         gold: '#B8860B',
         'gold-ink': '#6B4E0A',
         'gold-tint': '#F3E6C4',
-        line: '#E8DED2',
+        line: '#DEE3ED',
       },
       fontFamily: {
         // Pretendard is the only Hangul-complete family already shipping
@@ -73,10 +73,10 @@ export default {
         shell: '860px',
       },
       boxShadow: {
-        card: '0 10px 28px -16px rgba(42, 24, 16, 0.22)',
-        pop: '0 16px 32px -16px rgba(255, 122, 31, 0.32)',
-        glow: '0 22px 44px -16px rgba(122, 53, 5, 0.45)',
-        ring: '0 12px 26px -12px rgba(168, 74, 10, 0.35)',
+        card: '0 10px 28px -16px rgba(21, 26, 36, 0.22)',
+        pop: '0 16px 32px -16px rgba(46, 95, 232, 0.32)',
+        glow: '0 22px 44px -16px rgba(19, 43, 122, 0.45)',
+        ring: '0 12px 26px -12px rgba(30, 63, 168, 0.35)',
       },
       borderRadius: {
         sm: '6px',
@@ -93,8 +93,8 @@ export default {
         '3xl': '28px',
       },
       backgroundImage: {
-        'gradient-primary': 'linear-gradient(135deg, #FFA05C 0%, #FF7A1F 55%, #7A3505 100%)',
-        'gradient-primary-soft': 'linear-gradient(135deg, #FFA05C 0%, #A84A0A 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #6E93F5 0%, #2E5FE8 55%, #132B7A 100%)',
+        'gradient-primary-soft': 'linear-gradient(135deg, #6E93F5 0%, #1E3FA8 100%)',
       },
     },
   },

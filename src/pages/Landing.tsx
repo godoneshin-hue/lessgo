@@ -46,10 +46,10 @@ export default function Landing() {
   return (
     <div className="bg-bg">
       {/* Hero */}
-      <header className="relative overflow-hidden bg-gradient-to-b from-[#3A1E0C] via-[#7A3505] to-[#FF7A1F] px-6 pb-20 pt-8 text-white sm:px-10 sm:pb-28 sm:pt-10">
+      <header className="relative overflow-hidden bg-gradient-to-b from-[#0B1330] via-[#132B7A] to-[#2E5FE8] px-6 pb-20 pt-8 text-white sm:px-10 sm:pb-28 sm:pt-10">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-24 top-0 h-96 w-96 rounded-full bg-[#FFA05C] opacity-30 blur-3xl"
+          className="pointer-events-none absolute -right-24 top-0 h-96 w-96 rounded-full bg-[#6E93F5] opacity-30 blur-3xl"
         />
         <nav className="relative mx-auto flex max-w-5xl items-center justify-between">
           <span className="flex items-center gap-2 font-display text-lg font-black tracking-tight">

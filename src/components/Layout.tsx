@@ -6,7 +6,7 @@ import UpdateBanner from './UpdateBanner'
 
 export default function Layout() {
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden bg-bg sm:flex sm:items-center sm:justify-center sm:bg-[#F0E1D5] sm:py-8">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-bg sm:flex sm:items-center sm:justify-center sm:bg-[#DCE3F5] sm:py-8">
       <div
         aria-hidden
         className="pointer-events-none absolute -left-24 -top-24 hidden h-72 w-72 rounded-full bg-primary-tint opacity-70 blur-3xl sm:block"
