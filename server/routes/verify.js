@@ -21,6 +21,40 @@ function todayKST() {
   }
 }
 
+// iOS Shortcuts' "URL 콘텐츠 가져오기" action, with its request body set to
+// "파일", wraps the file in a multipart/form-data body rather than sending
+// raw bytes — regardless of a manually-set Content-Type header. Pulls the
+// first image part out of that multipart body by hand (no dependency; this
+// is the only place that needs it).
+function extractMultipartImage(buffer, contentType) {
+  const boundaryMatch = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType || '')
+  const boundary = boundaryMatch ? boundaryMatch[1] || boundaryMatch[2] : null
+  if (!boundary) return null
+
+  const marker = Buffer.from(`--${boundary}`)
+  const parts = []
+  let cursor = buffer.indexOf(marker)
+  while (cursor !== -1) {
+    const next = buffer.indexOf(marker, cursor + marker.length)
+    if (next === -1) break
+    parts.push(buffer.slice(cursor + marker.length, next))
+    cursor = next
+  }
+
+  for (const part of parts) {
+    const headerEnd = part.indexOf('\r\n\r\n')
+    if (headerEnd === -1) continue
+    const header = part.slice(0, headerEnd).toString('utf8')
+    const typeMatch = /content-type:\s*([^\r\n;]+)/i.exec(header)
+    if (!typeMatch || !typeMatch[1].trim().startsWith('image/')) continue
+
+    let body = part.slice(headerEnd + 4)
+    if (body.slice(-2).toString('utf8') === '\r\n') body = body.slice(0, -2)
+    return { mimeType: typeMatch[1].trim(), data: body }
+  }
+  return null
+}
+
 verifyRouter.post(
   '/analyze',
   asyncHandler(async (req, res) => {
@@ -53,14 +87,15 @@ verifyRouter.post(
 // Verify.tsx flow — figures out the user's tracked apps itself instead of
 // requiring the caller to already know them.
 //
-// Accepts two body shapes so the Shortcut itself can stay dead simple:
-//   1. raw image bytes (Content-Type: image/*) — the Shortcuts app's "URL
-//      콘텐츠 가져오기" action can set its body straight to a photo variable
-//      with zero extra steps (no Base64 Encode action, no JSON building).
-//   2. { images: [dataUrl, ...] } — what the web app itself sends.
+// Accepts three body shapes so the Shortcut itself can stay dead simple:
+//   1. multipart/form-data with an image part — what Shortcuts' "URL 콘텐츠
+//      가져오기" action actually sends when its body is set to "파일",
+//      regardless of any Content-Type header set by hand.
+//   2. raw image bytes (Content-Type: image/*).
+//   3. { images: [dataUrl, ...] } — what the web app itself sends.
 verifyRouter.post(
   '/quick',
-  raw({ type: 'image/*', limit: '15mb' }),
+  raw({ type: (req) => !req.is('application/json'), limit: '15mb' }),
   asyncHandler(async (req, res) => {
     const userId = req.header('x-user-id')
     const user = userId && (await db.findUserById(userId))
@@ -68,8 +103,14 @@ verifyRouter.post(
 
     let images
     if (Buffer.isBuffer(req.body) && req.body.length > 0) {
-      const mimeType = req.is('image/*') || 'image/jpeg'
-      images = [`data:${mimeType};base64,${req.body.toString('base64')}`]
+      const contentType = req.header('content-type') || ''
+      if (/multipart\/form-data/i.test(contentType)) {
+        const file = extractMultipartImage(req.body, contentType)
+        if (file) images = [`data:${file.mimeType};base64,${file.data.toString('base64')}`]
+      } else {
+        const mimeType = req.is('image/*') || 'image/jpeg'
+        images = [`data:${mimeType};base64,${req.body.toString('base64')}`]
+      }
     } else {
       images = req.body?.images
     }
