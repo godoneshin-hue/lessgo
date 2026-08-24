@@ -19,6 +19,16 @@ async function requireUser(req, res) {
 }
 
 verificationsRouter.get(
+  '/',
+  asyncHandler(async (req, res) => {
+    const user = await requireUser(req, res)
+    if (!user) return
+    const verifications = await db.getVerifications(user.id)
+    res.json({ verifications })
+  }),
+)
+
+verificationsRouter.get(
   '/:date',
   asyncHandler(async (req, res) => {
     const user = await requireUser(req, res)

@@ -126,6 +126,7 @@ export function socialAuth(payload: {
 export function analyzeScreenTime(userId: string, images: string[], trackedAppNames: string[]) {
   const todayLabel = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
   return request<{
+    isAuthentic: boolean
     totalMinutes: number | null
     apps: { name: string; minutes: number }[]
     hasPerAppBreakdown: boolean
@@ -300,6 +301,10 @@ export interface ApiVerification {
 
 export function getVerification(userId: string, date: string) {
   return request<{ verification: ApiVerification | null }>(`/verifications/${date}`, { userId })
+}
+
+export function listMyVerifications(userId: string) {
+  return request<{ verifications: ApiVerification[] }>('/verifications', { userId })
 }
 
 export function submitVerification(userId: string, date: string, usedMinutes: number, apps: ApiAppLimit[]) {

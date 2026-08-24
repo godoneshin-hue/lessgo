@@ -79,6 +79,10 @@ verifyRouter.post(
     const { iso: date, label: todayLabel } = todayKST()
     const result = await analyzeScreenTimeImages(images, trackedAppNames, todayLabel)
 
+    if (!result.isAuthentic) {
+      return res.status(422).json({ error: '스크린타임 설정 화면 스크린샷이 아닌 것 같아요.' })
+    }
+
     const missingNames = trackedAppNames.filter((name) => !result.apps.some((a) => a.name === name))
     if (missingNames.length > 0) {
       return res.status(422).json({ error: `${missingNames.join(', ')} 사용 시간이 스크린샷에 없어요.` })

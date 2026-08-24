@@ -144,7 +144,7 @@ export default function Me() {
                       onClick={() => handleBuy(b)}
                       className="rounded-full bg-primary-tint px-2 py-0.5 text-[9px] font-bold text-primary-ink disabled:bg-line disabled:text-ink-faint"
                     >
-                      {b.price}캐시
+                      {b.price}캐시로 구매
                     </button>
                   ) : (
                     <span className="text-[9px] text-ink-faint">잠김</span>

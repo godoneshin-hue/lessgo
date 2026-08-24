@@ -307,7 +307,7 @@ export default function ChallengeNew() {
             </Section>
 
             <Section title="챌린지 기간">
-              <div className="flex gap-2 rounded-full bg-bg p-1 text-xs font-bold">
+              <div className="flex gap-2 rounded-full border border-line bg-bg p-1 text-xs font-bold">
                 <button
                   type="button"
                   onClick={() => setPeriodMode('preset')}
@@ -376,7 +376,7 @@ export default function ChallengeNew() {
                     </option>
                   ))}
                 </select>
-                <div className="flex rounded-full bg-bg p-0.5 text-xs font-bold">
+                <div className="flex rounded-full border border-line bg-bg p-0.5 text-xs font-bold">
                   <button
                     type="button"
                     onClick={() => setVerifyMeridiem('AM')}
@@ -442,7 +442,7 @@ export default function ChallengeNew() {
 
                 {stakeEnabled && (
                   <>
-                    <div className="flex gap-2 rounded-full bg-bg p-1 text-xs font-bold">
+                    <div className="flex gap-2 rounded-full border border-line bg-bg p-1 text-xs font-bold">
                       <button
                         type="button"
                         onClick={() => setStakeType('donation')}
@@ -474,7 +474,7 @@ export default function ChallengeNew() {
                         className="w-24 rounded-lg bg-bg px-2 py-1.5 text-right text-base font-bold tabular-nums text-ink outline-none"
                       />
                       <span className="text-sm font-semibold text-ink-soft">원 /</span>
-                      <div className="ml-auto flex rounded-full bg-bg p-0.5 text-xs font-bold">
+                      <div className="ml-auto flex rounded-full border border-line bg-bg p-0.5 text-xs font-bold">
                         <button
                           type="button"
                           onClick={() => setDonationPeriod('day')}

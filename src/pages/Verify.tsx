@@ -100,6 +100,14 @@ export default function Verify() {
     try {
       const trackedAppNames = apps.map((a) => a.name)
       const result = await api.analyzeScreenTime(profile.id, images, trackedAppNames)
+
+      if (!result.isAuthentic) {
+        setHasAnalyzed(false)
+        setMissingApps([])
+        pushToast('스크린타임 설정 화면 스크린샷이 아닌 것 같아요. 실제 캡처 화면을 올려주세요.')
+        return
+      }
+
       setApps((prev) => prev.map((a) => {
         const match = result.apps.find((r) => r.name === a.name)
         return match ? { ...a, minutes: match.minutes } : a

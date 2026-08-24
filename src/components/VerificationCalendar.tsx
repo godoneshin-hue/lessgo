@@ -41,7 +41,11 @@ export default function VerificationCalendar({
 
   const monthDays = (() => {
     const firstOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1)
-    const firstIso = firstOfMonth.toISOString().slice(0, 10)
+    // Not `.toISOString()` — that reads the UTC representation of a local
+    // midnight Date, which rolls back to the previous day for any UTC+
+    // timezone (KST included), shifting every cell in month view back by
+    // one day versus what's actually stored under `records`.
+    const firstIso = `${firstOfMonth.getFullYear()}-${String(firstOfMonth.getMonth() + 1).padStart(2, '0')}-${String(firstOfMonth.getDate()).padStart(2, '0')}`
     const startOffset = -firstOfMonth.getDay()
     const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate()
     const totalCells = Math.ceil((daysInMonth - startOffset) / 7) * 7

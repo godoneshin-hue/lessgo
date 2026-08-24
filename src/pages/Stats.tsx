@@ -102,7 +102,7 @@ export default function Stats() {
       <section className="rounded-3xl bg-surface p-5 shadow-card">
         <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-ink">최근 사용 시간</p>
-          <div className="flex rounded-full bg-bg p-0.5 text-xs font-bold">
+          <div className="flex rounded-full border border-line bg-bg p-0.5 text-xs font-bold">
             <button
               type="button"
               onClick={() => setView('chart')}

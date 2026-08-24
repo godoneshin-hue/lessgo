@@ -8,7 +8,9 @@ export default {
         surface: '#FFFFFF',
         ink: '#1C1815',
         'ink-soft': '#645C50',
-        'ink-faint': '#9C9385',
+        // Was #9C9385 — only ~3:1 against white (fails WCAG AA for the small
+        // 9–11px labels/timestamps this token is used for almost everywhere).
+        'ink-faint': '#736A59',
         primary: '#2F86F0',
         'primary-light': '#6EC1F5',
         'primary-ink': '#1E63C9',

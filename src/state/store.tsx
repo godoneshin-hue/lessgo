@@ -110,12 +110,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // The server has held every verification since day one (used to award
+  // cash, and now to gate premium too), but `records` itself lived only in
+  // this browser's localStorage — logging in on a new device, or after an
+  // in-app browser (Instagram/Kakao) wipes storage, brought the account and
+  // cash back fine but silently reset the streak/history to empty, since
+  // nothing ever re-fetched it. Pull it down on every login so the account
+  // is what's actually persistent, not this one browser.
+  async function refreshRecords() {
+    if (!profile.id) return
+    try {
+      const { verifications } = await api.listMyVerifications(profile.id)
+      setRecords(
+        verifications.map((v) => ({ date: v.date, usedMinutes: v.usedMinutes, verified: true, apps: v.apps })),
+      )
+    } catch {
+      // Keep whatever's already local rather than blanking out a streak the
+      // user can currently see, just because this one fetch failed.
+    }
+  }
+
   useEffect(() => {
     if (!profile.id) {
       setChallenges(null)
       return
     }
     refreshChallenges()
+    refreshRecords()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.id])
 
