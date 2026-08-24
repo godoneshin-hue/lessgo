@@ -120,6 +120,14 @@ export function updateAvatar(userId: string, avatar: string) {
   return request<{ user: ApiUser }>('/auth/me', { method: 'PATCH', userId, body: JSON.stringify({ avatar }) })
 }
 
+export function updateProfile(userId: string, patch: { name: string; school: string; grade: string }) {
+  return request<{ user: ApiUser }>('/auth/me', { method: 'PATCH', userId, body: JSON.stringify(patch) })
+}
+
+export function deleteAccount(userId: string) {
+  return request<{ ok: true }>('/auth/me', { method: 'DELETE', userId })
+}
+
 export interface ApiParticipant {
   userId: string
   name: string

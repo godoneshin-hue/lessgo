@@ -157,7 +157,10 @@ export const db = {
     const current = await this.findUserById(id)
     if (!current) return null
     const merged = { ...current, ...patch }
-    const { rows } = await pool.query(`update users set avatar = $2 where id = $1 returning *`, [id, merged.avatar])
+    const { rows } = await pool.query(
+      `update users set avatar = $2, name = $3, school = $4, grade = $5 where id = $1 returning *`,
+      [id, merged.avatar, merged.name, merged.school, merged.grade],
+    )
     return rowToUser(rows[0])
   },
   async deleteUser(id) {

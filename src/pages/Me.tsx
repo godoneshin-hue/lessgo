@@ -7,7 +7,7 @@ import { fileToAvatarDataUrl } from '../lib/image'
 import { ApiError } from '../lib/api'
 import { ALL_BADGES, findBadge, type BadgeDef } from '../state/badges'
 import Avatar from '../components/Avatar'
-import { CameraIcon, ChatIcon, ChevronRightIcon, FlagIcon } from '../components/icons'
+import { CameraIcon, ChatIcon, ChevronRightIcon, FlagIcon, SettingsIcon } from '../components/icons'
 
 const PREMIUM_FEATURES = [
   { free: '기본 목표 설정', premium: '기본 목표 설정' },
@@ -159,6 +159,7 @@ export default function Me() {
       <section className="rounded-3xl bg-surface p-2 shadow-card">
         <MenuRow label="내 챌린지 보기" to="/challenges" icon={<FlagIcon className="h-4 w-4" />} />
         <MenuRow label="피드백 보내기" to="/feedback" icon={<ChatIcon className="h-4 w-4" />} />
+        <MenuRow label="설정" to="/settings" icon={<SettingsIcon className="h-4 w-4" />} />
         <ToggleRow label="인증 리마인더 알림" checked={reminderOn} onChange={setReminderOn} />
         <ToggleRow label="챌린지 알림" checked={challengeAlertOn} onChange={setChallengeAlertOn} />
       </section>

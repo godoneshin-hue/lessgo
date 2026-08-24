@@ -170,8 +170,34 @@ authRouter.patch(
     const user = userId && (await db.findUserById(userId))
     if (!user) return res.status(401).json({ error: '로그인이 필요해요.' })
 
-    const { avatar } = req.body ?? {}
-    const updated = await db.updateUser(user.id, { avatar: avatar ?? user.avatar })
+    const { avatar, name, school, grade } = req.body ?? {}
+    if (name !== undefined && !name.trim()) return res.status(400).json({ error: '이름을 입력해주세요.' })
+    if (school !== undefined && !school.trim()) return res.status(400).json({ error: '학교를 입력해주세요.' })
+    if (grade !== undefined && !grade.trim()) return res.status(400).json({ error: '학년을 입력해주세요.' })
+
+    const updated = await db.updateUser(user.id, {
+      avatar: avatar ?? user.avatar,
+      name: name !== undefined ? name.trim() : user.name,
+      school: school !== undefined ? school.trim() : user.school,
+      grade: grade !== undefined ? grade.trim() : user.grade,
+    })
     res.json({ user: toPublicUser(updated) })
+  }),
+)
+
+// Self-service account deletion — anyone can delete only their own account
+// (auth is just "you know your own x-user-id", same as every other user
+// route here). Cascades via FK constraints (server/schema.sql) clean up
+// their challenges/verifications/payments; nothing extra to do here.
+authRouter.delete(
+  '/me',
+  asyncHandler(async (req, res) => {
+    const userId = req.header('x-user-id')
+    const user = userId && (await db.findUserById(userId))
+    if (!user) return res.status(401).json({ error: '로그인이 필요해요.' })
+
+    await db.deleteUser(user.id)
+    logEvent('user.delete_self', `${user.name}님이 회원 탈퇴했어요`, { userId: user.id })
+    res.json({ ok: true })
   }),
 )

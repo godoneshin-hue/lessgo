@@ -41,6 +41,8 @@ interface StoreValue {
   ) => Promise<{ needsProfile: true } | { needsProfile: false }>
   logout: () => void
   updateAvatar: (avatar: string) => Promise<void>
+  updateProfile: (patch: { name: string; school: string; grade: string }) => Promise<void>
+  deleteAccount: () => Promise<void>
   justAuthenticated: boolean
   endAuthTransition: () => void
   records: DayRecord[]
@@ -166,6 +168,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setProfile(toProfile(user))
   }
 
+  async function updateProfile(patch: { name: string; school: string; grade: string }) {
+    if (!profile.id) return
+    const { user } = await api.updateProfile(profile.id, patch)
+    setProfile(toProfile(user))
+  }
+
+  async function deleteAccount() {
+    if (!profile.id) return
+    await api.deleteAccount(profile.id)
+    setIsAuthenticated(false)
+    setProfile(EMPTY_PROFILE)
+    setRecords(buildEmptyRecords())
+  }
+
   function endAuthTransition() {
     setJustAuthenticated(false)
   }
@@ -205,6 +221,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     socialAuth,
     logout,
     updateAvatar,
+    updateProfile,
+    deleteAccount,
     justAuthenticated,
     endAuthTransition,
     records,
