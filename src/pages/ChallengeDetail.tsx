@@ -53,6 +53,8 @@ export default function ChallengeDetail() {
   const [joining, setJoining] = useState(false)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const [title, setTitle] = useState('')
   const [goalHours, setGoalHours] = useState(3)
@@ -113,6 +115,7 @@ export default function ChallengeDetail() {
     ? challenge.participants.some((p) => p.userId === profile.id)
     : challenge.creatorId === profile.id
   const canEdit = isGroup ? isMember : challenge.creatorId === profile.id
+  const isCreator = challenge.creatorId === profile.id
 
   const threshold = { dailyLimitMinutes: challenge.goalMinutes }
   const sinceDate = challenge.createdAt.slice(0, 10)
@@ -138,6 +141,20 @@ export default function ChallengeDetail() {
       pushToast(err instanceof ApiError ? err.message : '참여하지 못했어요.')
     } finally {
       setJoining(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!id) return
+    setDeleting(true)
+    try {
+      await api.deleteChallenge(profile.id, id)
+      pushToast('챌린지를 삭제했어요')
+      refreshChallenges()
+      navigate('/challenges')
+    } catch (err) {
+      pushToast(err instanceof ApiError ? err.message : '삭제하지 못했어요.')
+      setDeleting(false)
     }
   }
 
@@ -777,6 +794,45 @@ export default function ChallengeDetail() {
               {pledge.toLocaleString()}캐시
             </p>
             <p className="mt-0.5 text-xs text-ink-faint">내가 지금까지 쌓은 캐시예요 (실제 돈 아님)</p>
+          </section>
+        )}
+
+        {isCreator && (
+          <section className="rounded-3xl border border-warn/30 bg-surface p-5">
+            {!confirmingDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="w-full rounded-2xl border border-warn py-3 text-sm font-bold text-warn-text active:scale-[0.99]"
+              >
+                챌린지 삭제
+              </button>
+            ) : (
+              <div className="space-y-2.5">
+                <p className="text-sm font-bold text-warn-text">
+                  {isGroup ? '정말 삭제하시겠어요? 참여 중인 모두에게 사라져요.' : '정말 삭제하시겠어요?'} 되돌릴 수
+                  없어요.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(false)}
+                    disabled={deleting}
+                    className="flex-1 rounded-xl bg-bg py-2.5 text-sm font-bold text-ink-soft disabled:opacity-60"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex-1 rounded-xl bg-warn py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                  >
+                    {deleting ? '삭제 중…' : '삭제하기'}
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
         )}
       </div>

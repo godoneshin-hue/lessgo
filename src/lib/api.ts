@@ -202,6 +202,10 @@ export function getChallenge(id: string) {
   return request<{ challenge: ApiChallenge }>(`/challenges/${id}`)
 }
 
+export function deleteChallenge(userId: string, id: string) {
+  return request<{ ok: true }>(`/challenges/${id}`, { method: 'DELETE', userId })
+}
+
 export function createChallenge(
   userId: string,
   payload: {

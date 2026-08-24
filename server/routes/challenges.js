@@ -57,6 +57,28 @@ challengesRouter.get(
   }),
 )
 
+// User-facing delete — creator only (this is separate from the admin-only
+// /api/admin/challenges/:id route, which any admin can use on anyone's).
+challengesRouter.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const user = await requireUser(req, res)
+    if (!user) return
+
+    const challenge = await db.findChallengeById(req.params.id)
+    if (!challenge) return res.status(404).json({ error: '챌린지를 찾을 수 없어요.' })
+    if (challenge.creatorId !== user.id) {
+      return res.status(403).json({ error: '만든 사람만 삭제할 수 있어요.' })
+    }
+
+    await db.deleteChallenge(req.params.id)
+    logEvent('challenge.delete', `${user.name}님이 "${challenge.title}" 챌린지를 삭제했어요`, {
+      challengeId: challenge.id,
+    })
+    res.json({ ok: true })
+  }),
+)
+
 challengesRouter.get(
   '/:id',
   asyncHandler(async (req, res) => {
