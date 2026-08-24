@@ -4,6 +4,7 @@ import { achievementRate, currentStreak, isSuccess } from '../lib/stats'
 import { minutesToLabel } from '../lib/date'
 import { usePersonalChallenge } from '../lib/usePersonalChallenge'
 import { DAILY_VERIFY_CASH, findBadge } from '../state/badges'
+import { toBackgroundStyle } from '../state/seed'
 import ProgressRing from '../components/ProgressRing'
 import Avatar from '../components/Avatar'
 import { ChevronRightIcon, FlagIcon, SettingsIcon } from '../components/icons'
@@ -64,7 +65,10 @@ export default function Home() {
         // The one thing this screen actually wants a user to do today — the
         // only section on this page dark enough to read as "act now,"
         // everything else below is calmer/quieter on purpose.
-        <section className="relative overflow-hidden rounded-3xl bg-ink p-5 text-white shadow-glow">
+        <section
+          className="relative overflow-hidden rounded-3xl bg-ink bg-cover bg-center p-5 text-white shadow-glow"
+          style={personalChallenge.background ? toBackgroundStyle(personalChallenge.background) : undefined}
+        >
           <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/25 blur-2xl" />
           <div className="relative flex items-start justify-between">
             <div>
