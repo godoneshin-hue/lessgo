@@ -548,7 +548,7 @@ export default function ChallengeDetail() {
   return (
     <div className="pb-6">
       <div
-        className="relative overflow-hidden rounded-b-[32px] bg-gradient-primary px-5 pb-5 pt-[max(16px,env(safe-area-inset-top))] text-white bg-cover bg-center"
+        className="relative overflow-hidden rounded-b-[32px] bg-gradient-primary px-5 pb-5 pt-safe-t-lg text-white bg-cover bg-center"
         style={challenge.background ? toBackgroundStyle(challenge.background) : undefined}
       >
         <div className="mb-3 flex items-center justify-between">

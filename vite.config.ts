@@ -19,8 +19,8 @@ export default defineConfig({
         lang: 'ko',
         start_url: '/',
         display: 'standalone',
-        background_color: '#F5F2EA',
-        theme_color: '#3E93F0',
+        background_color: '#FBF3EF',
+        theme_color: '#FF7A1F',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },

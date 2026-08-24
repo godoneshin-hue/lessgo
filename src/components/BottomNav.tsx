@@ -12,7 +12,7 @@ const TABS = [
 export default function BottomNav() {
   return (
     <nav className="absolute inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 backdrop-blur">
-      <ul className="flex items-stretch justify-between px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2">
+      <ul className="flex items-stretch justify-between px-2 pb-safe-b pt-2">
         {TABS.map(({ to, label, Icon }) => (
           <li key={to} className="flex-1">
             <NavLink

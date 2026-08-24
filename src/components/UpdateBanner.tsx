@@ -8,7 +8,7 @@ export default function UpdateBanner() {
   if (!updateAvailable) return null
 
   return (
-    <div className="absolute inset-x-0 top-0 z-40 flex justify-center px-3 pt-[max(8px,env(safe-area-inset-top))]">
+    <div className="absolute inset-x-0 top-0 z-40 flex justify-center px-3 pt-safe-t-sm">
       <button
         type="button"
         onClick={applyUpdate}

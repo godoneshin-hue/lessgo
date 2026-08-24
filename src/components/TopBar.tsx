@@ -9,7 +9,7 @@ export default function TopBar() {
   const streak = personalChallenge ? currentStreak(records, { dailyLimitMinutes: personalChallenge.goalMinutes }) : 0
 
   return (
-    <header className="flex items-center justify-between px-5 pb-2 pt-[max(14px,env(safe-area-inset-top))]">
+    <header className="flex items-center justify-between px-5 pb-2 pt-safe-t">
       <div className="flex items-center gap-1.5">
         <span className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-gradient-primary-soft text-[13px] font-black text-white">
           L

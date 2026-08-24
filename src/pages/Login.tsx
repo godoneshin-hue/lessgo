@@ -67,7 +67,7 @@ export default function Login() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="relative overflow-hidden rounded-b-[32px] bg-gradient-primary px-6 pb-8 pt-[max(16px,env(safe-area-inset-top))] text-white">
+      <div className="relative overflow-hidden rounded-b-[32px] bg-gradient-primary px-6 pb-8 pt-safe-t-lg text-white">
         <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full bg-white/10" />
         <Link
           to="/welcome"

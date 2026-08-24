@@ -147,7 +147,7 @@ export default function Signup() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="relative overflow-hidden rounded-b-[32px] bg-gradient-primary px-6 pb-6 pt-[max(16px,env(safe-area-inset-top))] text-white">
+      <div className="relative overflow-hidden rounded-b-[32px] bg-gradient-primary px-6 pb-6 pt-safe-t-lg text-white">
         <div aria-hidden className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full bg-white/10" />
         <button
           type="button"

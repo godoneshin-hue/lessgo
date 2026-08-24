@@ -38,6 +38,15 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* The fluid type scale (tailwind.config.js fontSize, cqw-based clamp())
+     reads against this container's own width, not the browser viewport —
+     the app shell is a fixed-max-width phone card even on a wide desktop
+     window, so viewport-relative units would oversize text there. */
+  .app-shell {
+    container-type: inline-size;
+    container-name: app-shell;
+  }
 }
 
 @keyframes toast-in {
