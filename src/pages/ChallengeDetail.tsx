@@ -66,7 +66,7 @@ export default function ChallengeDetail() {
   const [verifyMeridiem, setVerifyMeridiem] = useState<'AM' | 'PM'>('PM')
   const [stakeEnabled, setStakeEnabled] = useState(false)
   const [stakeType, setStakeType] = useState<'donation' | 'bet'>('donation')
-  const [donationAmount, setDonationAmount] = useState(1000)
+  const [donationAmount, setDonationAmount] = useState(100)
   const [donationPeriod, setDonationPeriod] = useState<'day' | 'week'>('week')
   const [photo, setPhoto] = useState('')
   const [background, setBackground] = useState('')
@@ -505,11 +505,12 @@ export default function ChallengeDetail() {
                 <input
                   type="number"
                   min={0}
-                  step={500}
+                  step={10}
                   value={donationAmount}
                   onChange={(e) => setDonationAmount(Math.max(0, Number(e.target.value)))}
                   className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-base text-ink outline-none focus:border-primary"
                 />
+                <p className="text-[11px] text-ink-faint">실제 돈이 아니라 앱 캐시예요.</p>
                 <div className="flex gap-1.5">
                   {(['day', 'week'] as const).map((p) => (
                     <button
@@ -770,12 +771,12 @@ export default function ChallengeDetail() {
             </p>
             <p className="mt-1 text-sm text-ink-soft">
               {challenge.donationPeriod === 'week' ? '실패한 주마다' : '실패한 날마다'}{' '}
-              <span className="font-bold text-ink">{challenge.donationAmount.toLocaleString()}원</span>
+              <span className="font-bold text-ink">{challenge.donationAmount.toLocaleString()}캐시</span>
             </p>
             <p className="font-display mt-2 text-2xl font-black tabular-nums text-warn-text">
-              {pledge.toLocaleString()}원
+              {pledge.toLocaleString()}캐시
             </p>
-            <p className="mt-0.5 text-xs text-ink-faint">내가 지금까지 쌓은 금액이에요</p>
+            <p className="mt-0.5 text-xs text-ink-faint">내가 지금까지 쌓은 캐시예요 (실제 돈 아님)</p>
           </section>
         )}
       </div>

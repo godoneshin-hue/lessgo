@@ -104,7 +104,7 @@ export default function Challenges() {
                 </span>
                 {c.donationAmount > 0 && (
                   <span className="font-bold text-warn-text">
-                    {c.donationPeriod === 'week' ? '주' : '일'} {c.donationAmount.toLocaleString()}원
+                    {c.donationPeriod === 'week' ? '주' : '일'} {c.donationAmount.toLocaleString()}캐시
                   </span>
                 )}
               </div>

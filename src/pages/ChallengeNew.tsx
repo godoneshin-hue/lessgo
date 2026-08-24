@@ -48,7 +48,7 @@ export default function ChallengeNew() {
 
   const [stakeEnabled, setStakeEnabled] = useState(false)
   const [stakeType, setStakeType] = useState<'donation' | 'bet'>('donation')
-  const [donationAmount, setDonationAmount] = useState(1000)
+  const [donationAmount, setDonationAmount] = useState(100)
   const [donationPeriod, setDonationPeriod] = useState<'day' | 'week'>('week')
   const [submitting, setSubmitting] = useState(false)
 
@@ -433,7 +433,7 @@ export default function ChallengeNew() {
               </Section>
             )}
 
-            <Section title="기부 · 내기" desc="목표를 못 지키면 정해둔 금액이 쌓여요. 안 걸어도 괜찮아요.">
+            <Section title="기부 · 내기" desc="목표를 못 지키면 정해둔 캐시가 쌓여요. 실제 돈이 아니라 앱 캐시예요. 안 걸어도 괜찮아요.">
               <div className="space-y-3 rounded-2xl border border-line bg-surface p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-ink">기부/내기 설정</span>
@@ -468,12 +468,12 @@ export default function ChallengeNew() {
                       <input
                         type="number"
                         min={0}
-                        step={100}
+                        step={10}
                         value={donationAmount}
                         onChange={(e) => setDonationAmount(Math.max(0, Number(e.target.value)))}
                         className="w-24 rounded-lg bg-bg px-2 py-1.5 text-right text-base font-bold tabular-nums text-ink outline-none"
                       />
-                      <span className="text-sm font-semibold text-ink-soft">원 /</span>
+                      <span className="text-sm font-semibold text-ink-soft">캐시 /</span>
                       <div className="ml-auto flex rounded-full border border-line bg-bg p-0.5 text-xs font-bold">
                         <button
                           type="button"

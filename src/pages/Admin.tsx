@@ -310,7 +310,7 @@ function Overview({
           label="그룹 챌린지"
           value={challenges ? String(challenges.filter((c) => c.mode === 'group').length) : '—'}
         />
-        <StatTile label="내기 총액(설정 기준)" value={`${totalStake.toLocaleString()}원`} accent />
+        <StatTile label="내기 총액(설정 기준)" value={`${totalStake.toLocaleString()}캐시`} accent />
       </div>
 
       <div className="mt-8">
@@ -593,7 +593,7 @@ function ChallengesTable({
                   {c.maxParticipants ? ` / ${c.maxParticipants}` : ''}
                 </Td>
                 <Td className="tabular-nums text-amber-600">
-                  {c.donationAmount > 0 ? `${c.donationAmount.toLocaleString()}원 / ${c.donationPeriod === 'week' ? '주' : '일'}` : '—'}
+                  {c.donationAmount > 0 ? `${c.donationAmount.toLocaleString()}캐시 / ${c.donationPeriod === 'week' ? '주' : '일'}` : '—'}
                 </Td>
                 <Td className="tabular-nums">{c.shareCode}</Td>
                 <Td className="tabular-nums text-[#9AA3BD]">{formatDate(c.createdAt)}</Td>
