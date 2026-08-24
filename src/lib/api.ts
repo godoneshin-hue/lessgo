@@ -90,24 +90,6 @@ export function confirmPayment(userId: string, paymentKey: string, orderId: stri
   })
 }
 
-export function signup(payload: {
-  authProvider: 'phone' | 'google' | 'kakao'
-  name: string
-  school: string
-  grade: string
-  phone?: string
-  password?: string
-  email?: string
-  inviteCode: string
-  avatar: string
-}) {
-  return request<{ user: ApiUser }>('/auth/signup', { method: 'POST', body: JSON.stringify(payload) })
-}
-
-export function login(payload: { phone: string; password: string }) {
-  return request<{ user: ApiUser }>('/auth/login', { method: 'POST', body: JSON.stringify(payload) })
-}
-
 export function socialAuth(payload: {
   provider: 'google' | 'kakao'
   token: string

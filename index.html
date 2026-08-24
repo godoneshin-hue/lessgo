@@ -25,6 +25,41 @@
     <meta name="twitter:image" content="https://lessgo-mu.vercel.app/icon-512.png" />
 
     <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
+
+    <!-- A stale service worker (installed before some later deploy) can
+         serve an old cached index.html whose script/style tags point at
+         content-hashed filenames that no longer exist on the server —
+         those requests 404, the bundle never runs, and the page is
+         permanently blank with no way for the app's own JS to recover
+         (it never loaded). This has nothing to do with in-app routing —
+         it fires before React ever mounts — so it has to live here, not
+         in src/. Unregistering the stuck worker and reloading once (the
+         sessionStorage guard stops a retry loop if the reload fails for
+         some unrelated reason) self-heals instead of leaving a dead tab. -->
+    <script>
+      (function () {
+        var KEY = 'lessgo:sw-recovery'
+        window.addEventListener(
+          'error',
+          function (e) {
+            var src = e && e.target && e.target.src
+            if (!src || src.indexOf('/assets/') === -1 || sessionStorage.getItem(KEY)) return
+            sessionStorage.setItem(KEY, '1')
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker
+                .getRegistrations()
+                .then(function (regs) {
+                  return Promise.all(regs.map(function (r) { return r.unregister() }))
+                })
+                .finally(function () { location.reload() })
+            } else {
+              location.reload()
+            }
+          },
+          true,
+        )
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useGoogleLogin } from '@react-oauth/google'
 import { useStore } from '../state/store'
 import { ApiError } from '../lib/api'
-import { formatPhone } from '../lib/phone'
 import { fileToAvatarDataUrl } from '../lib/image'
 import { kakaoLogin } from '../lib/kakao'
 import { pickAvatarEmoji } from '../state/seed'
@@ -17,20 +16,17 @@ const SCHOOL_LEVELS: { label: string; full: string; grades: number[] | null }[] 
   { label: '성인', full: '성인', grades: null },
 ]
 
-type Step = 'method' | 'credentials' | 'profile'
+type Step = 'method' | 'profile'
 type SocialProvider = 'google' | 'kakao'
 
 export default function Signup() {
   const navigate = useNavigate()
-  const { signup, socialAuth, pushToast } = useStore()
+  const { socialAuth, pushToast } = useStore()
 
   const [step, setStep] = useState<Step>('method')
-  const [authProvider, setAuthProvider] = useState<'phone' | SocialProvider | null>(null)
+  const [authProvider, setAuthProvider] = useState<SocialProvider | null>(null)
   const [socialToken, setSocialToken] = useState('')
   const [socialBusy, setSocialBusy] = useState(false)
-
-  const [phone, setPhone] = useState('')
-  const [password, setPassword] = useState('')
 
   const [name, setName] = useState('')
   const [school, setSchool] = useState('')
@@ -49,7 +45,6 @@ export default function Signup() {
       : schoolLevel.full
     : ''
 
-  const canSubmitCredentials = phone.replace(/\D/g, '').length >= 10 && password.trim().length > 0
   const canSubmitProfile = name.trim().length > 0 && school.trim().length > 0 && grade.length > 0 && !submitting
 
   async function chooseSocial(provider: SocialProvider, token: string) {
@@ -88,17 +83,6 @@ export default function Signup() {
     }
   }
 
-  function choosePhone() {
-    setAuthProvider('phone')
-    setStep('credentials')
-  }
-
-  function handleCredentialsNext(e: React.FormEvent) {
-    e.preventDefault()
-    if (!canSubmitCredentials) return
-    setStep('profile')
-  }
-
   async function handleAvatarPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -111,22 +95,18 @@ export default function Signup() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!canSubmitProfile) return
+    if (!canSubmitProfile || !authProvider) return
     setError('')
     setSubmitting(true)
     try {
-      if (authProvider === 'google' || authProvider === 'kakao') {
-        const result = await socialAuth(authProvider, socialToken, {
-          name: name.trim(),
-          school: school.trim(),
-          grade,
-          inviteCode: inviteCode.trim(),
-          avatar,
-        })
-        if (result.needsProfile) throw new ApiError('인증이 만료됐어요. 다시 시도해주세요.')
-      } else {
-        await signup({ authProvider: 'phone', name: name.trim(), school: school.trim(), grade, phone, password, inviteCode: inviteCode.trim(), avatar })
-      }
+      const result = await socialAuth(authProvider, socialToken, {
+        name: name.trim(),
+        school: school.trim(),
+        grade,
+        inviteCode: inviteCode.trim(),
+        avatar,
+      })
+      if (result.needsProfile) throw new ApiError('인증이 만료됐어요. 다시 시도해주세요.')
       navigate('/home')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '가입에 실패했어요. 다시 시도해주세요.')
@@ -137,8 +117,6 @@ export default function Signup() {
 
   function goBack() {
     if (step === 'profile') {
-      setStep(authProvider === 'phone' ? 'credentials' : 'method')
-    } else if (step === 'credentials') {
       setStep('method')
     } else {
       navigate('/welcome')
@@ -160,7 +138,6 @@ export default function Signup() {
         <h1 className="relative mt-3 text-xl font-black tracking-tight">회원가입</h1>
         <p className="relative mt-1 text-sm text-white/80">
           {step === 'method' && '어떤 방법으로 시작할까요?'}
-          {step === 'credentials' && '로그인에 사용할 정보를 입력해주세요.'}
           {step === 'profile' && '친구들과 같은 학교인지 확인하는 데 쓰여요.'}
         </p>
       </div>
@@ -185,13 +162,6 @@ export default function Signup() {
             <KakaoIcon className="h-[18px] w-[18px]" />
             카카오로 계속하기
           </button>
-          <button
-            type="button"
-            onClick={choosePhone}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-primary-soft py-3.5 text-sm font-extrabold text-white shadow-glow"
-          >
-            📱 전화번호로 계속하기
-          </button>
           <p className="mt-auto pt-6 text-center text-sm text-ink-soft">
             이미 계정이 있으신가요?{' '}
             <Link to="/login" className="font-bold text-primary-ink">
@@ -199,37 +169,6 @@ export default function Signup() {
             </Link>
           </p>
         </div>
-      )}
-
-      {step === 'credentials' && (
-        <form onSubmit={handleCredentialsNext} className="flex flex-1 flex-col px-6 pb-8 pt-6">
-          <label className="text-xs font-bold text-ink-soft">전화번호</label>
-          <input
-            type="tel"
-            inputMode="numeric"
-            autoComplete="tel"
-            value={phone}
-            onChange={(e) => setPhone(formatPhone(e.target.value))}
-            placeholder="010-1234-5678"
-            className="mt-2 rounded-xl border border-line bg-surface px-4 py-3 text-base tabular-nums text-ink outline-none focus:border-primary"
-          />
-          <label className="mt-4 text-xs font-bold text-ink-soft">비밀번호</label>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="비밀번호를 입력하세요"
-            className="mt-2 rounded-xl border border-line bg-surface px-4 py-3 text-base text-ink outline-none focus:border-primary"
-          />
-          <button
-            type="submit"
-            disabled={!canSubmitCredentials}
-            className="mt-6 w-full rounded-2xl bg-gradient-primary-soft py-3.5 text-sm font-extrabold text-white shadow-glow transition-transform active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-line disabled:bg-none disabled:text-ink-faint disabled:shadow-none"
-          >
-            다음
-          </button>
-        </form>
       )}
 
       {step === 'profile' && (
@@ -245,11 +184,9 @@ export default function Signup() {
           </div>
           <p className="-mt-2 text-center text-xs text-ink-faint">프로필 사진 (선택)</p>
 
-          {(authProvider === 'google' || authProvider === 'kakao') && (
-            <p className="-mt-1 rounded-xl bg-primary-tint px-3 py-2 text-center text-xs font-semibold text-primary-ink">
-              {authProvider === 'google' ? 'Google' : '카카오'} 계정으로 가입해요
-            </p>
-          )}
+          <p className="-mt-1 rounded-xl bg-primary-tint px-3 py-2 text-center text-xs font-semibold text-primary-ink">
+            {authProvider === 'google' ? 'Google' : '카카오'} 계정으로 가입해요
+          </p>
 
           <Field label="이름 (본명)">
             <input

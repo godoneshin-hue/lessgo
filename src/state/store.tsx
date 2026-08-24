@@ -34,18 +34,6 @@ function toProfile(user: ApiUser): Profile {
 interface StoreValue {
   isAuthenticated: boolean
   profile: Profile
-  signup: (input: {
-    authProvider: 'phone' | 'google'
-    name: string
-    school: string
-    grade: string
-    phone?: string
-    password?: string
-    email?: string
-    inviteCode: string
-    avatar: string
-  }) => Promise<void>
-  login: (phone: string, password: string) => Promise<void>
   socialAuth: (
     provider: 'google' | 'kakao',
     token: string,
@@ -148,36 +136,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 2600)
   }
 
-  async function signup(input: {
-    authProvider: 'phone' | 'google'
-    name: string
-    school: string
-    grade: string
-    phone?: string
-    password?: string
-    email?: string
-    inviteCode: string
-    avatar: string
-  }) {
-    const { user } = await api.signup(input)
-    setProfile(toProfile(user))
-    // A brand-new account starts with a completely clean slate — no usage
-    // history — regardless of whatever this browser had cached from a
-    // previous account.
-    setRecords(buildEmptyRecords())
-    setIsAuthenticated(true)
-    setJustAuthenticated(true)
-    pushToast(input.inviteCode ? `${user.name}님, 초대코드가 확인됐어요!` : `${user.name}님, LessGo에 오신 걸 환영해요`)
-  }
-
-  async function login(phone: string, password: string) {
-    const { user } = await api.login({ phone, password })
-    setProfile(toProfile(user))
-    setIsAuthenticated(true)
-    setJustAuthenticated(true)
-    pushToast('다시 만나서 반가워요')
-  }
-
   async function socialAuth(
     provider: 'google' | 'kakao',
     token: string,
@@ -244,8 +202,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value: StoreValue = {
     isAuthenticated,
     profile,
-    signup,
-    login,
     socialAuth,
     logout,
     updateAvatar,
