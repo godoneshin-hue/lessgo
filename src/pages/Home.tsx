@@ -7,7 +7,7 @@ import { DAILY_VERIFY_CASH, findBadge } from '../state/badges'
 import { toBackgroundStyle } from '../state/seed'
 import ProgressRing from '../components/ProgressRing'
 import Avatar from '../components/Avatar'
-import { ChevronRightIcon, FlagIcon, SettingsIcon } from '../components/icons'
+import { ChatIcon, ChevronRightIcon, FlagIcon, SettingsIcon } from '../components/icons'
 
 export default function Home() {
   const { profile, records, todayRecord } = useStore()
@@ -39,6 +39,13 @@ export default function Home() {
           </h1>
           <p className="mt-0.5 text-[13px] text-ink-soft">오늘도 가볍게, 스크린타임을 지켜봐요.</p>
         </div>
+        <Link
+          to="/feedback"
+          aria-label="피드백 보내기"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-bg text-ink-soft transition-colors hover:text-primary"
+        >
+          <ChatIcon className="h-4 w-4" />
+        </Link>
         <Link
           to="/me"
           className="flex shrink-0 items-center gap-1 rounded-full bg-gold-tint px-3 py-1.5 text-xs font-bold text-gold-ink"

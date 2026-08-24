@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useStore } from '../state/store'
 import { ApiError } from '../lib/api'
-import { ChatIcon, ChevronRightIcon } from '../components/icons'
+import { ChevronRightIcon } from '../components/icons'
 
 const SCHOOL_LEVELS: { label: string; full: string; grades: number[] | null }[] = [
   { label: '중학생', full: '중학교', grades: [1, 2, 3] },
@@ -80,17 +80,6 @@ export default function Settings() {
         </Link>
         <h1 className="text-lg font-extrabold tracking-tight text-ink">설정</h1>
       </div>
-
-      <Link
-        to="/feedback"
-        className="mb-4 flex items-center gap-3 rounded-2xl bg-surface p-3.5 shadow-card active:scale-[0.99]"
-      >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg text-ink-soft">
-          <ChatIcon className="h-4 w-4" />
-        </span>
-        <span className="flex-1 text-sm font-semibold text-ink">피드백 보내기</span>
-        <ChevronRightIcon className="h-4 w-4 text-ink-faint" />
-      </Link>
 
       <form onSubmit={handleSave} className="space-y-4 rounded-3xl bg-surface p-5 shadow-card">
         <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">내 정보</p>
