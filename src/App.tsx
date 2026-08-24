@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import AuthLayout from './components/AuthLayout'
 import PageTurnOverlay from './components/PageTurnOverlay'
 import { useStore } from './state/store'
+import Landing from './pages/Landing'
 import Welcome from './pages/Welcome'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -38,7 +39,8 @@ export default function App() {
     <>
       <PageTurnOverlay />
       <Routes>
-        <Route index element={<Navigate to={isAuthenticated ? '/home' : '/welcome'} replace />} />
+        <Route index element={<Navigate to={isAuthenticated ? '/home' : '/landing'} replace />} />
+        <Route path="/landing" element={isAuthenticated ? <Navigate to="/home" replace /> : <Landing />} />
 
         <Route element={<AuthLayout />}>
           <Route
