@@ -60,6 +60,42 @@ export default function Home() {
           </span>
           <ChevronRightIcon className="h-4 w-4 text-ink-faint" />
         </Link>
+      ) : !verifiedToday ? (
+        // The one thing this screen actually wants a user to do today — the
+        // only section on this page dark enough to read as "act now,"
+        // everything else below is calmer/quieter on purpose.
+        <section className="relative overflow-hidden rounded-3xl bg-ink p-5 text-white shadow-glow">
+          <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/25 blur-2xl" />
+          <div className="relative flex items-start justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-white/60">{personalChallenge.title}</p>
+              <p className="mt-1 font-display text-2xl font-black tracking-tight text-white">
+                {minutesToLabel(personalChallenge.goalMinutes)}{' '}
+                <span className="text-base font-bold text-white/70">이내로</span>
+              </p>
+            </div>
+            <Link
+              to={`/challenges/${personalChallenge.id}`}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors hover:text-white"
+              aria-label="개인 챌린지 보기"
+            >
+              <SettingsIcon className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="relative mt-4 flex items-center justify-between gap-3 border-t border-white/15 pt-4">
+            <div>
+              <p className="text-sm font-semibold text-white/80">아직 인증하지 않았어요</p>
+              <p className="mt-0.5 text-xs font-bold text-primary-light">🪙 인증하면 캐시 {DAILY_VERIFY_CASH}개 받아요</p>
+            </div>
+            <Link
+              to="/verify"
+              className="shrink-0 rounded-full bg-white px-4 py-2 text-[13px] font-extrabold text-primary-deep shadow-glow transition-transform active:scale-95"
+            >
+              오늘 인증하기
+            </Link>
+          </div>
+        </section>
       ) : (
         <section className="rounded-3xl bg-surface p-5 shadow-card">
           <div className="flex items-start justify-between">
@@ -79,41 +115,21 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="mt-4 border-t border-line pt-4">
-            {!verifiedToday && (
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-ink-soft">아직 인증하지 않았어요</p>
-                  <p className="mt-0.5 text-xs font-bold text-gold-ink">🪙 인증하면 캐시 {DAILY_VERIFY_CASH}개 받아요</p>
-                </div>
-                <Link
-                  to="/verify"
-                  className="shrink-0 rounded-full bg-gradient-primary-soft px-4 py-2 text-[13px] font-bold text-white shadow-glow transition-transform active:scale-95"
-                >
-                  오늘 인증하기
-                </Link>
-              </div>
-            )}
-            {verifiedToday && (
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-ink">
-                    오늘 사용 시간 {minutesToLabel(todayRecord.usedMinutes ?? 0)}
-                  </p>
-                  <p className={`mt-0.5 text-[13px] font-semibold ${success ? 'text-success-text' : 'text-warn-text'}`}>
-                    {success ? '목표 달성! 잘 하고 있어요 🎉' : '목표를 조금 넘었어요'}
-                  </p>
-                </div>
-                <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg ${
-                    success ? 'bg-success-tint' : 'bg-warn-tint'
-                  }`}
-                  aria-hidden
-                >
-                  {success ? '✅' : '⚠️'}
-                </span>
-              </div>
-            )}
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
+            <div>
+              <p className="text-sm font-bold text-ink">오늘 사용 시간 {minutesToLabel(todayRecord.usedMinutes ?? 0)}</p>
+              <p className={`mt-0.5 text-[13px] font-semibold ${success ? 'text-success-text' : 'text-warn-text'}`}>
+                {success ? '목표 달성! 잘 하고 있어요 🎉' : '목표를 조금 넘었어요'}
+              </p>
+            </div>
+            <span
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg ${
+                success ? 'bg-success-tint' : 'bg-warn-tint'
+              }`}
+              aria-hidden
+            >
+              {success ? '✅' : '⚠️'}
+            </span>
           </div>
         </section>
       )}
@@ -146,12 +162,9 @@ export default function Home() {
       )}
 
       {otherChallenges.length > 0 ? (
-        <Link
-          to="/challenges"
-          className="flex items-center gap-3 rounded-3xl bg-surface p-4 shadow-card transition-transform active:scale-[0.99]"
-        >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold-tint text-gold-ink">
-            <FlagIcon className="h-5 w-5" />
+        <Link to="/challenges" className="flex items-center gap-3 rounded-xl px-1 py-2 active:opacity-70">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-tint text-gold-ink">
+            <FlagIcon className="h-4 w-4" />
           </span>
           <span className="flex-1">
             <span className="block text-sm font-bold text-ink">참여 중인 챌린지 {otherChallenges.length}개</span>
@@ -160,12 +173,9 @@ export default function Home() {
           <ChevronRightIcon className="h-4 w-4 text-ink-faint" />
         </Link>
       ) : (
-        <Link
-          to="/challenges/new"
-          className="flex items-center gap-3 rounded-3xl bg-surface p-4 shadow-card transition-transform active:scale-[0.99]"
-        >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold-tint text-gold-ink">
-            <FlagIcon className="h-5 w-5" />
+        <Link to="/challenges/new" className="flex items-center gap-3 rounded-xl px-1 py-2 active:opacity-70">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-tint text-gold-ink">
+            <FlagIcon className="h-4 w-4" />
           </span>
           <span className="flex-1">
             <span className="block text-sm font-bold text-ink">친구 대결 만들기</span>

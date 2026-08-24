@@ -12,6 +12,17 @@ const CATEGORY_LABEL: Record<string, string> = {
   school: '학교대항전',
 }
 
+// Every challenge card used to be the exact same white rectangle regardless
+// of type — a solo goal and a whole-school battle read identically. Each
+// mode/category gets its own accent so the list is scannable by type, not
+// just by reading the pill text.
+const CARD_ACCENT: Record<string, { bar: string; pill: string }> = {
+  solo: { bar: 'bg-line', pill: 'bg-line text-ink-soft' },
+  friends: { bar: 'bg-primary', pill: 'bg-primary-tint text-primary-ink' },
+  class: { bar: 'bg-success', pill: 'bg-success-tint text-success-text' },
+  school: { bar: 'bg-gold', pill: 'bg-gold-tint text-gold-ink' },
+}
+
 export default function Challenges() {
   const { profile, pushToast, challenges, refreshChallenges } = useStore()
   const navigate = useNavigate()
@@ -77,40 +88,42 @@ export default function Challenges() {
       )}
 
       <ul className="space-y-3">
-        {challenges?.map((c) => (
-          <li key={c.id}>
-            <Link
-              to={`/challenges/${c.id}`}
-              className="block rounded-3xl bg-surface p-4 shadow-card transition-transform active:scale-[0.99]"
-            >
-              <div className="flex items-center justify-between">
-                <span
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                    c.mode === 'solo' ? 'bg-line text-ink-soft' : 'bg-primary-tint text-primary-ink'
-                  }`}
-                >
-                  {c.mode === 'solo' ? '개인' : CATEGORY_LABEL[c.category ?? 'friends']}
-                </span>
-                <span className="text-[11px] font-semibold text-ink-faint">{c.periodDays}일</span>
-              </div>
-              <p className="mt-2 text-base font-extrabold text-ink">{c.title}</p>
-              <div className="mt-2 flex items-center justify-between text-xs text-ink-soft">
-                <span>
-                  {c.mode === 'group' && c.category === 'friends' && `참여 ${c.participants.length}명`}
-                  {c.mode === 'group' && (c.category === 'class' || c.category === 'school') && c.teams
-                    ? `${c.teams[0].name} vs ${c.teams[1].name}`
-                    : null}
-                  {c.mode === 'solo' && c.goalMinutes && `목표 ${minutesToLabel(c.goalMinutes)}`}
-                </span>
-                {c.donationAmount > 0 && (
-                  <span className="font-bold text-warn-text">
-                    {c.donationPeriod === 'week' ? '주' : '일'} {c.donationAmount.toLocaleString()}캐시
-                  </span>
-                )}
-              </div>
-            </Link>
-          </li>
-        ))}
+        {challenges?.map((c) => {
+          const accent = CARD_ACCENT[c.mode === 'solo' ? 'solo' : (c.category ?? 'friends')]
+          return (
+            <li key={c.id}>
+              <Link
+                to={`/challenges/${c.id}`}
+                className="flex overflow-hidden rounded-2xl bg-surface shadow-card transition-transform active:scale-[0.99]"
+              >
+                <span aria-hidden className={`w-1.5 shrink-0 ${accent.bar}`} />
+                <div className="flex-1 p-4">
+                  <div className="flex items-center justify-between">
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${accent.pill}`}>
+                      {c.mode === 'solo' ? '개인' : CATEGORY_LABEL[c.category ?? 'friends']}
+                    </span>
+                    <span className="text-[11px] font-semibold text-ink-faint">{c.periodDays}일</span>
+                  </div>
+                  <p className="mt-2 text-base font-extrabold text-ink">{c.title}</p>
+                  <div className="mt-2 flex items-center justify-between text-xs text-ink-soft">
+                    <span>
+                      {c.mode === 'group' && c.category === 'friends' && `참여 ${c.participants.length}명`}
+                      {c.mode === 'group' && (c.category === 'class' || c.category === 'school') && c.teams
+                        ? `${c.teams[0].name} vs ${c.teams[1].name}`
+                        : null}
+                      {c.mode === 'solo' && c.goalMinutes && `목표 ${minutesToLabel(c.goalMinutes)}`}
+                    </span>
+                    {c.donationAmount > 0 && (
+                      <span className="font-bold text-warn-text">
+                        {c.donationPeriod === 'week' ? '주' : '일'} {c.donationAmount.toLocaleString()}캐시
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
