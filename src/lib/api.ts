@@ -8,8 +8,8 @@ export function setAdminPassword(password: string) {
   adminPassword = password
 }
 
-async function request<T>(path: string, options: RequestInit & { userId?: string } = {}): Promise<T> {
-  const { userId, headers, ...rest } = options
+async function request<T>(path: string, options: RequestInit & { apiKey?: string } = {}): Promise<T> {
+  const { apiKey, headers, ...rest } = options
   const isAdminPath = path.startsWith('/admin')
   let res: Response
   try {
@@ -17,7 +17,7 @@ async function request<T>(path: string, options: RequestInit & { userId?: string
       ...rest,
       headers: {
         'Content-Type': 'application/json',
-        ...(userId ? { 'x-user-id': userId } : {}),
+        ...(apiKey ? { 'x-api-key': apiKey } : {}),
         ...(isAdminPath && adminPassword ? { Authorization: `Basic ${btoa(`admin:${adminPassword}`)}` } : {}),
         ...headers,
       },
@@ -46,6 +46,7 @@ export interface ApiUser {
   phone: string
   email: string
   oauthId: string | null
+  apiKey: string
   inviteCode: string
   avatar: string
   cash: number
@@ -67,25 +68,25 @@ export function getUsersPublic(ids: string[]) {
   return request<{ users: ApiPublicUser[] }>('/auth/users/public', { method: 'POST', body: JSON.stringify({ ids }) })
 }
 
-export function buyBadge(userId: string, badgeId: string) {
-  return request<{ user: ApiUser }>('/shop/buy', { method: 'POST', userId, body: JSON.stringify({ badgeId }) })
+export function buyBadge(apiKey: string, badgeId: string) {
+  return request<{ user: ApiUser }>('/shop/buy', { method: 'POST', apiKey, body: JSON.stringify({ badgeId }) })
 }
 
-export function equipBadge(userId: string, badgeId: string | null) {
-  return request<{ user: ApiUser }>('/shop/equip', { method: 'POST', userId, body: JSON.stringify({ badgeId }) })
+export function equipBadge(apiKey: string, badgeId: string | null) {
+  return request<{ user: ApiUser }>('/shop/equip', { method: 'POST', apiKey, body: JSON.stringify({ badgeId }) })
 }
 
-export function createPaymentOrder(userId: string) {
+export function createPaymentOrder(apiKey: string) {
   return request<{ orderId: string; amount: number; orderName: string }>('/payments/order', {
     method: 'POST',
-    userId,
+    apiKey,
   })
 }
 
-export function confirmPayment(userId: string, paymentKey: string, orderId: string, amount: number) {
+export function confirmPayment(apiKey: string, paymentKey: string, orderId: string, amount: number) {
   return request<{ user: ApiUser }>('/payments/confirm', {
     method: 'POST',
-    userId,
+    apiKey,
     body: JSON.stringify({ paymentKey, orderId, amount }),
   })
 }
@@ -105,7 +106,7 @@ export function socialAuth(payload: {
   })
 }
 
-export function analyzeScreenTime(userId: string, images: string[], trackedAppNames: string[]) {
+export function analyzeScreenTime(apiKey: string, images: string[], trackedAppNames: string[]) {
   const todayLabel = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
   return request<{
     isAuthentic: boolean
@@ -113,19 +114,19 @@ export function analyzeScreenTime(userId: string, images: string[], trackedAppNa
     apps: { name: string; minutes: number }[]
     hasPerAppBreakdown: boolean
     dateMatches: boolean | null
-  }>('/verify/analyze', { method: 'POST', userId, body: JSON.stringify({ images, trackedAppNames, todayLabel }) })
+  }>('/verify/analyze', { method: 'POST', apiKey, body: JSON.stringify({ images, trackedAppNames, todayLabel }) })
 }
 
-export function updateAvatar(userId: string, avatar: string) {
-  return request<{ user: ApiUser }>('/auth/me', { method: 'PATCH', userId, body: JSON.stringify({ avatar }) })
+export function updateAvatar(apiKey: string, avatar: string) {
+  return request<{ user: ApiUser }>('/auth/me', { method: 'PATCH', apiKey, body: JSON.stringify({ avatar }) })
 }
 
-export function updateProfile(userId: string, patch: { name: string; school: string; grade: string }) {
-  return request<{ user: ApiUser }>('/auth/me', { method: 'PATCH', userId, body: JSON.stringify(patch) })
+export function updateProfile(apiKey: string, patch: { name: string; school: string; grade: string }) {
+  return request<{ user: ApiUser }>('/auth/me', { method: 'PATCH', apiKey, body: JSON.stringify(patch) })
 }
 
-export function deleteAccount(userId: string) {
-  return request<{ ok: true }>('/auth/me', { method: 'DELETE', userId })
+export function deleteAccount(apiKey: string) {
+  return request<{ ok: true }>('/auth/me', { method: 'DELETE', apiKey })
 }
 
 export interface ApiParticipant {
@@ -194,20 +195,20 @@ export interface ApiPendingEdit {
   createdAt: string
 }
 
-export function listMyChallenges(userId: string) {
-  return request<{ challenges: ApiChallenge[] }>('/challenges/mine', { userId })
+export function listMyChallenges(apiKey: string) {
+  return request<{ challenges: ApiChallenge[] }>('/challenges/mine', { apiKey })
 }
 
 export function getChallenge(id: string) {
   return request<{ challenge: ApiChallenge }>(`/challenges/${id}`)
 }
 
-export function deleteChallenge(userId: string, id: string) {
-  return request<{ ok: true }>(`/challenges/${id}`, { method: 'DELETE', userId })
+export function deleteChallenge(apiKey: string, id: string) {
+  return request<{ ok: true }>(`/challenges/${id}`, { method: 'DELETE', apiKey })
 }
 
 export function createChallenge(
-  userId: string,
+  apiKey: string,
   payload: {
     mode: 'solo' | 'group'
     title: string
@@ -228,29 +229,29 @@ export function createChallenge(
     memo?: string | null
   },
 ) {
-  return request<{ challenge: ApiChallenge }>('/challenges', { method: 'POST', userId, body: JSON.stringify(payload) })
+  return request<{ challenge: ApiChallenge }>('/challenges', { method: 'POST', apiKey, body: JSON.stringify(payload) })
 }
 
-export function updateChallenge(userId: string, id: string, patch: ApiPendingEdit['patch']) {
+export function updateChallenge(apiKey: string, id: string, patch: ApiPendingEdit['patch']) {
   return request<{ challenge: ApiChallenge }>(`/challenges/${id}`, {
     method: 'PATCH',
-    userId,
+    apiKey,
     body: JSON.stringify(patch),
   })
 }
 
-export function approveChallengeEdit(userId: string, id: string) {
-  return request<{ challenge: ApiChallenge }>(`/challenges/${id}/pending-edit/approve`, { method: 'POST', userId })
+export function approveChallengeEdit(apiKey: string, id: string) {
+  return request<{ challenge: ApiChallenge }>(`/challenges/${id}/pending-edit/approve`, { method: 'POST', apiKey })
 }
 
-export function rejectChallengeEdit(userId: string, id: string) {
-  return request<{ challenge: ApiChallenge }>(`/challenges/${id}/pending-edit/reject`, { method: 'POST', userId })
+export function rejectChallengeEdit(apiKey: string, id: string) {
+  return request<{ challenge: ApiChallenge }>(`/challenges/${id}/pending-edit/reject`, { method: 'POST', apiKey })
 }
 
-export function joinChallenge(userId: string, target: { code?: string; challengeId?: string }) {
+export function joinChallenge(apiKey: string, target: { code?: string; challengeId?: string }) {
   return request<{ challenge: ApiChallenge }>('/challenges/join', {
     method: 'POST',
-    userId,
+    apiKey,
     body: JSON.stringify(target),
   })
 }
@@ -293,18 +294,18 @@ export interface ApiVerification {
   createdAt: string
 }
 
-export function getVerification(userId: string, date: string) {
-  return request<{ verification: ApiVerification | null }>(`/verifications/${date}`, { userId })
+export function getVerification(apiKey: string, date: string) {
+  return request<{ verification: ApiVerification | null }>(`/verifications/${date}`, { apiKey })
 }
 
-export function listMyVerifications(userId: string) {
-  return request<{ verifications: ApiVerification[] }>('/verifications', { userId })
+export function listMyVerifications(apiKey: string) {
+  return request<{ verifications: ApiVerification[] }>('/verifications', { apiKey })
 }
 
-export function submitVerification(userId: string, date: string, usedMinutes: number, apps: ApiAppLimit[]) {
+export function submitVerification(apiKey: string, date: string, usedMinutes: number, apps: ApiAppLimit[]) {
   return request<{ verification: ApiVerification; cashEarned: number; cashTotal: number }>('/verifications', {
     method: 'POST',
-    userId,
+    apiKey,
     body: JSON.stringify({ date, usedMinutes, apps }),
   })
 }
@@ -328,10 +329,10 @@ export interface ApiFeedback {
   createdAt: string
 }
 
-export function submitFeedback(userId: string, category: FeedbackCategory, message: string) {
+export function submitFeedback(apiKey: string, category: FeedbackCategory, message: string) {
   return request<{ feedback: ApiFeedback }>('/feedback', {
     method: 'POST',
-    userId,
+    apiKey,
     body: JSON.stringify({ category, message }),
   })
 }

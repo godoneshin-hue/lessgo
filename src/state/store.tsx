@@ -15,6 +15,7 @@ interface Toast {
 function toProfile(user: ApiUser): Profile {
   return {
     id: user.id,
+    apiKey: user.apiKey,
     name: user.name,
     school: user.school,
     grade: user.grade,
@@ -86,7 +87,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   async function refreshChallenges() {
     if (!profile.id) return
     try {
-      const { challenges } = await api.listMyChallenges(profile.id)
+      const { challenges } = await api.listMyChallenges(profile.apiKey)
       setChallenges(challenges)
     } catch {
       // A transient failure (e.g. the backend waking up from an idle sleep)
@@ -110,7 +111,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   async function refreshRecords() {
     if (!profile.id) return
     try {
-      const { verifications } = await api.listMyVerifications(profile.id)
+      const { verifications } = await api.listMyVerifications(profile.apiKey)
       setRecords(
         verifications.map((v) => ({ date: v.date, usedMinutes: v.usedMinutes, verified: true, apps: v.apps })),
       )
@@ -164,19 +165,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   async function updateAvatar(avatar: string) {
     if (!profile.id) return
-    const { user } = await api.updateAvatar(profile.id, avatar)
+    const { user } = await api.updateAvatar(profile.apiKey, avatar)
     setProfile(toProfile(user))
   }
 
   async function updateProfile(patch: { name: string; school: string; grade: string }) {
     if (!profile.id) return
-    const { user } = await api.updateProfile(profile.id, patch)
+    const { user } = await api.updateProfile(profile.apiKey, patch)
     setProfile(toProfile(user))
   }
 
   async function deleteAccount() {
     if (!profile.id) return
-    await api.deleteAccount(profile.id)
+    await api.deleteAccount(profile.apiKey)
     setIsAuthenticated(false)
     setProfile(EMPTY_PROFILE)
     setRecords(buildEmptyRecords())
@@ -201,17 +202,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }
 
   async function buyBadge(badgeId: string) {
-    const { user } = await api.buyBadge(profile.id, badgeId)
+    const { user } = await api.buyBadge(profile.apiKey, badgeId)
     setProfile(toProfile(user))
   }
 
   async function equipBadge(badgeId: string | null) {
-    const { user } = await api.equipBadge(profile.id, badgeId)
+    const { user } = await api.equipBadge(profile.apiKey, badgeId)
     setProfile(toProfile(user))
   }
 
   async function confirmPayment(paymentKey: string, orderId: string, amount: number) {
-    const { user } = await api.confirmPayment(profile.id, paymentKey, orderId, amount)
+    const { user } = await api.confirmPayment(profile.apiKey, paymentKey, orderId, amount)
     setProfile(toProfile(user))
   }
 

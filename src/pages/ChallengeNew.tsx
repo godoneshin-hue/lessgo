@@ -106,7 +106,7 @@ export default function ChallengeNew() {
     setSubmitting(true)
     try {
       const verifyByHour = verifyMeridiem === 'AM' ? verifyHour12 % 12 : (verifyHour12 % 12) + 12
-      const { challenge } = await api.createChallenge(profile.id, {
+      const { challenge } = await api.createChallenge(profile.apiKey, {
         mode: mode!,
         title: title.trim(),
         goalMinutes: goalHours * 60,

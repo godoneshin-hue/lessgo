@@ -11,6 +11,7 @@ import { shopRouter } from './routes/shop.js'
 import { paymentsRouter } from './routes/payments.js'
 import { db } from './db.js'
 import { requireAdminPassword } from './adminAuth.js'
+import { adminLimiter } from './rateLimiters.js'
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
@@ -22,6 +23,12 @@ function row(cells) {
 
 const app = express()
 const PORT = process.env.PORT || 4000
+
+// Render (and most PaaS hosts) sit behind a reverse proxy — without this,
+// every request looks like it comes from that proxy's single IP, so
+// express-rate-limit would rate-limit all users together instead of
+// per-client.
+app.set('trust proxy', 1)
 
 app.use(cors())
 app.use(express.json({ limit: '40mb' }))
@@ -37,7 +44,7 @@ app.use('/api/payments', paymentsRouter)
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
-app.get('/', requireAdminPassword, async (_req, res) => {
+app.get('/', adminLimiter, requireAdminPassword, async (_req, res) => {
   const [users, challenges, logs, verifications, feedback] = await Promise.all([
     db.getUsers(),
     db.getChallenges(),

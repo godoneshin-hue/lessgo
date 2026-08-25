@@ -42,7 +42,7 @@ export default function Verify() {
   useEffect(() => {
     if (!profile.id || !todayRecord.verified) return
     api
-      .getVerification(profile.id, today)
+      .getVerification(profile.apiKey, today)
       .then(({ verification }) => {
         if (!verification) unverifyToday()
       })
@@ -99,7 +99,7 @@ export default function Verify() {
     setAnalyzing(true)
     try {
       const trackedAppNames = apps.map((a) => a.name)
-      const result = await api.analyzeScreenTime(profile.id, images, trackedAppNames)
+      const result = await api.analyzeScreenTime(profile.apiKey, images, trackedAppNames)
 
       if (!result.isAuthentic) {
         setHasAnalyzed(false)
@@ -154,7 +154,7 @@ export default function Verify() {
     }
     if (profile.id) {
       try {
-        const { cashEarned } = await api.submitVerification(profile.id, today, total, apps)
+        const { cashEarned } = await api.submitVerification(profile.apiKey, today, total, apps)
         if (cashEarned > 0) pushToast(`오늘 인증하고 캐시 ${cashEarned}개 받았어요 🪙`)
       } catch {
         // The local record already drives the UI — a failed server sync just

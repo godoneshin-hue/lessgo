@@ -34,7 +34,7 @@ export default function Challenges() {
     if (!code.trim()) return
     setJoining(true)
     try {
-      const { challenge } = await api.joinChallenge(profile.id, { code: code.trim() })
+      const { challenge } = await api.joinChallenge(profile.apiKey, { code: code.trim() })
       pushToast(`"${challenge.title}" 챌린지에 참여했어요`)
       setCode('')
       refreshChallenges()

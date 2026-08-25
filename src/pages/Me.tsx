@@ -190,18 +190,19 @@ export default function Me() {
       <section className="rounded-3xl bg-surface p-5 shadow-card">
         <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">자동화 연결 (고급)</p>
         <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
-          아이폰 단축어로 스크린타임 캡처를 자동 업로드하려면 이 ID가 필요해요. 단축어의 "URL 콘텐츠 가져오기"
-          동작에서 <span className="font-bold text-ink">x-user-id</span> 헤더 값으로 붙여넣으세요.
+          아이폰 단축어로 스크린타임 캡처를 자동 업로드하려면 이 키가 필요해요. 단축어의 "URL 콘텐츠 가져오기"
+          동작에서 <span className="font-bold text-ink">x-api-key</span> 헤더 값으로 붙여넣으세요. 이 키는 절대
+          다른 사람과 공유하지 마세요 — 로그인 비밀번호와 같아요.
         </p>
         <button
           type="button"
           onClick={() => {
-            navigator.clipboard?.writeText(profile.id).catch(() => {})
-            pushToast('ID가 복사됐어요')
+            navigator.clipboard?.writeText(profile.apiKey).catch(() => {})
+            pushToast('키가 복사됐어요')
           }}
           className="mt-3 flex w-full items-center justify-between rounded-xl bg-bg px-3.5 py-2.5 text-left"
         >
-          <span className="truncate font-mono text-xs text-ink-soft">{profile.id}</span>
+          <span className="truncate font-mono text-xs text-ink-soft">{profile.apiKey}</span>
           <span className="ml-2 shrink-0 text-xs font-bold text-primary-ink">복사</span>
         </button>
       </section>

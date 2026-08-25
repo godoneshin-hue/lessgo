@@ -3,20 +3,11 @@ import { nanoid } from 'nanoid'
 import { db } from '../db.js'
 import { logEvent } from '../log.js'
 import { asyncHandler } from '../asyncHandler.js'
+import { requireUser } from '../requireUser.js'
 
 export const verificationsRouter = Router()
 
 const DAILY_VERIFY_CASH = 10
-
-async function requireUser(req, res) {
-  const userId = req.header('x-user-id')
-  const user = userId && (await db.findUserById(userId))
-  if (!user) {
-    res.status(401).json({ error: '로그인이 필요해요.' })
-    return null
-  }
-  return user
-}
 
 verificationsRouter.get(
   '/',

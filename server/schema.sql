@@ -97,3 +97,9 @@ alter table users add column if not exists cash int not null default 0;
 alter table users add column if not exists equipped_badge text;
 alter table users add column if not exists owned_badges jsonb not null default '[]';
 alter table users add column if not exists is_premium boolean not null default false;
+
+-- Bearer credential for the API, distinct from the `id` column: `id` is
+-- shown to other users all over the app (challenge participants, admin
+-- pages), so it can't double as a secret. api_key is never exposed to
+-- anyone but its own owner.
+alter table users add column if not exists api_key text unique;
