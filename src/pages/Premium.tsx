@@ -23,7 +23,7 @@ export default function Premium() {
     let cancelled = false
     async function setup() {
       try {
-        const order = await api.createPaymentOrder(profile.id)
+        const order = await api.createPaymentOrder(profile.apiKey)
         if (cancelled) return
         orderRef.current = order
         const widget = await loadPaymentWidget(TOSS_CLIENT_KEY, profile.id)

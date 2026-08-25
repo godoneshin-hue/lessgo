@@ -4,6 +4,8 @@ import { db } from '../db.js'
 import { logEvent } from '../log.js'
 import { asyncHandler } from '../asyncHandler.js'
 import { analyzeScreenTimeImages } from '../gemini.js'
+import { requireUser } from '../requireUser.js'
+import { verifyLimiter } from '../rateLimiters.js'
 
 export const verifyRouter = Router()
 
@@ -57,10 +59,10 @@ function extractMultipartImage(buffer, contentType) {
 
 verifyRouter.post(
   '/analyze',
+  verifyLimiter,
   asyncHandler(async (req, res) => {
-    const userId = req.header('x-user-id')
-    const user = userId && (await db.findUserById(userId))
-    if (!user) return res.status(401).json({ error: '로그인이 필요해요.' })
+    const user = await requireUser(req, res)
+    if (!user) return
 
     const { images, trackedAppNames, todayLabel } = req.body ?? {}
     if (!Array.isArray(images) || images.length === 0) {
@@ -95,11 +97,11 @@ verifyRouter.post(
 //   3. { images: [dataUrl, ...] } — what the web app itself sends.
 verifyRouter.post(
   '/quick',
+  verifyLimiter,
   raw({ type: (req) => !req.is('application/json'), limit: '15mb' }),
   asyncHandler(async (req, res) => {
-    const userId = req.header('x-user-id')
-    const user = userId && (await db.findUserById(userId))
-    if (!user) return res.status(401).json({ error: '로그인이 필요해요.' })
+    const user = await requireUser(req, res)
+    if (!user) return
 
     let images
     if (Buffer.isBuffer(req.body) && req.body.length > 0) {

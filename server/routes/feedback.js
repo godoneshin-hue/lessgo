@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid'
 import { db } from '../db.js'
 import { logEvent } from '../log.js'
 import { asyncHandler } from '../asyncHandler.js'
+import { requireUser } from '../requireUser.js'
 
 export const feedbackRouter = Router()
 
@@ -11,9 +12,8 @@ const CATEGORIES = ['design', 'function', 'other']
 feedbackRouter.post(
   '/',
   asyncHandler(async (req, res) => {
-    const userId = req.header('x-user-id')
-    const user = userId && (await db.findUserById(userId))
-    if (!user) return res.status(401).json({ error: '로그인이 필요해요.' })
+    const user = await requireUser(req, res)
+    if (!user) return
 
     const { category, message } = req.body ?? {}
     if (!CATEGORIES.includes(category) || !message || !String(message).trim()) {

@@ -15,6 +15,7 @@ export function pickAvatarEmoji(seedText: string): string {
 
 export const EMPTY_PROFILE: Profile = {
   id: '',
+  apiKey: '',
   name: '',
   school: '',
   grade: '',

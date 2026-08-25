@@ -1,8 +1,16 @@
 import pg from 'pg'
+import { randomBytes } from 'node:crypto'
 
 // DATE columns: return the raw 'YYYY-MM-DD' string instead of a JS Date,
 // so there's no timezone-shift risk on a value that has no time component.
 pg.types.setTypeParser(1082, (val) => val)
+
+// The bearer credential every authenticated request proves it knows (see
+// requireUser.js) — generated server-side only, never accepted from a
+// caller, so nothing but this module ever decides what a user's key is.
+function generateApiKey() {
+  return randomBytes(32).toString('base64url')
+}
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
@@ -21,6 +29,7 @@ function rowToUser(row) {
     email: row.email ?? '',
     oauthId: row.oauth_id ?? null,
     passwordHash: row.password_hash,
+    apiKey: row.api_key,
     inviteCode: row.invite_code,
     avatar: row.avatar,
     cash: row.cash,
@@ -131,10 +140,14 @@ export const db = {
     const { rows } = await pool.query('select * from users where id = $1', [id])
     return rowToUser(rows[0])
   },
+  async findUserByApiKey(apiKey) {
+    const { rows } = await pool.query('select * from users where api_key = $1', [apiKey])
+    return rowToUser(rows[0])
+  },
   async insertUser(user) {
     const { rows } = await pool.query(
-      `insert into users (id, name, school, grade, auth_provider, phone, email, oauth_id, password_hash, invite_code, avatar, created_at)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      `insert into users (id, name, school, grade, auth_provider, phone, email, oauth_id, password_hash, api_key, invite_code, avatar, created_at)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        returning *`,
       [
         user.id,
@@ -146,6 +159,7 @@ export const db = {
         user.email || null,
         user.oauthId || null,
         user.passwordHash,
+        generateApiKey(),
         user.inviteCode,
         user.avatar,
         user.createdAt,

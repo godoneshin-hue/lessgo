@@ -133,7 +133,7 @@ export default function ChallengeDetail() {
   async function handleJoin() {
     setJoining(true)
     try {
-      await api.joinChallenge(profile.id, { challengeId: id })
+      await api.joinChallenge(profile.apiKey, { challengeId: id })
       pushToast('챌린지에 참여했어요')
       load()
       refreshChallenges()
@@ -148,7 +148,7 @@ export default function ChallengeDetail() {
     if (!id) return
     setDeleting(true)
     try {
-      await api.deleteChallenge(profile.id, id)
+      await api.deleteChallenge(profile.apiKey, id)
       pushToast('챌린지를 삭제했어요')
       refreshChallenges()
       navigate('/challenges')
@@ -227,7 +227,7 @@ export default function ChallengeDetail() {
     setSaving(true)
     try {
       const verifyByHour = verifyMeridiem === 'AM' ? verifyHour12 % 12 : (verifyHour12 % 12) + 12
-      const { challenge: updated } = await api.updateChallenge(profile.id, challenge!.id, {
+      const { challenge: updated } = await api.updateChallenge(profile.apiKey, challenge!.id, {
         title: title.trim(),
         goalMinutes: goalHours * 60,
         periodDays,
@@ -253,7 +253,7 @@ export default function ChallengeDetail() {
 
   async function handleApproveEdit() {
     try {
-      const { challenge: updated } = await api.approveChallengeEdit(profile.id, challenge!.id)
+      const { challenge: updated } = await api.approveChallengeEdit(profile.apiKey, challenge!.id)
       setChallenge(updated)
       pushToast(updated.pendingEdit ? '동의했어요' : '모두 동의해서 수정이 반영됐어요')
       refreshChallenges()
@@ -264,7 +264,7 @@ export default function ChallengeDetail() {
 
   async function handleRejectEdit() {
     try {
-      const { challenge: updated } = await api.rejectChallengeEdit(profile.id, challenge!.id)
+      const { challenge: updated } = await api.rejectChallengeEdit(profile.apiKey, challenge!.id)
       setChallenge(updated)
       pushToast('수정 제안을 취소했어요')
     } catch (err) {

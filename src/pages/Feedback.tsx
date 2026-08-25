@@ -48,7 +48,7 @@ export default function Feedback() {
     setMessages((prev) => [...prev, { from: 'user', text }])
     setInput('')
     try {
-      await api.submitFeedback(profile.id, category, text)
+      await api.submitFeedback(profile.apiKey, category, text)
       setMessages((prev) => [
         ...prev,
         { from: 'bot', text: '소중한 의견 감사해요! 더 나은 LessGo를 만드는 데 큰 도움이 될 거예요 💙' },

@@ -3,15 +3,19 @@ import { db } from '../db.js'
 import { logEvent } from '../log.js'
 import { asyncHandler } from '../asyncHandler.js'
 import { requireAdminPassword } from '../adminAuth.js'
+import { adminLimiter } from '../rateLimiters.js'
 
 export const adminRouter = Router()
 
-adminRouter.use(requireAdminPassword)
+adminRouter.use(adminLimiter, requireAdminPassword)
 
 adminRouter.get(
   '/users',
   asyncHandler(async (_req, res) => {
-    const users = (await db.getUsers()).map(({ passwordHash, ...rest }) => rest)
+    // api_key is each user's bearer credential (see requireUser.js) — never
+    // let it leave this server, even to an authenticated admin, so a leaked
+    // admin password can't turn into every account being takeable at once.
+    const users = (await db.getUsers()).map(({ passwordHash, apiKey, ...rest }) => rest)
     res.json({ users })
   }),
 )

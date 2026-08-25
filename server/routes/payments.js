@@ -4,6 +4,7 @@ import { db } from '../db.js'
 import { logEvent } from '../log.js'
 import { asyncHandler } from '../asyncHandler.js'
 import { toPublicUser } from './auth.js'
+import { requireUser } from '../requireUser.js'
 
 export const paymentsRouter = Router()
 
@@ -13,16 +14,6 @@ export const paymentsRouter = Router()
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY || 'test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6'
 
 const PREMIUM_PRICE = 3900
-
-async function requireUser(req, res) {
-  const userId = req.header('x-user-id')
-  const user = userId && (await db.findUserById(userId))
-  if (!user) {
-    res.status(401).json({ error: '로그인이 필요해요.' })
-    return null
-  }
-  return user
-}
 
 // Called before opening the Toss widget so the amount the client claims to
 // charge is pinned server-side — the confirm step below checks the actual

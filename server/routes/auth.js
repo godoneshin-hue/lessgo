@@ -4,6 +4,8 @@ import { nanoid } from 'nanoid'
 import { db } from '../db.js'
 import { logEvent } from '../log.js'
 import { asyncHandler } from '../asyncHandler.js'
+import { requireUser } from '../requireUser.js'
+import { loginLimiter, authLimiter } from '../rateLimiters.js'
 
 export const authRouter = Router()
 
@@ -35,6 +37,7 @@ async function verifySocialToken(provider, token) {
 
 authRouter.post(
   '/signup',
+  authLimiter,
   asyncHandler(async (req, res) => {
     const { authProvider, name, school, grade, phone, password, email, inviteCode, avatar } = req.body ?? {}
     const provider = authProvider === 'google' ? 'google' : 'phone'
@@ -81,6 +84,7 @@ authRouter.post(
 
 authRouter.post(
   '/login',
+  loginLimiter,
   asyncHandler(async (req, res) => {
     const { phone, password } = req.body ?? {}
     if (!phone || !password) {
@@ -102,6 +106,7 @@ authRouter.post(
 
 authRouter.post(
   '/social',
+  authLimiter,
   asyncHandler(async (req, res) => {
     const { provider, token, name, school, grade, inviteCode, avatar } = req.body ?? {}
     if (provider !== 'google' && provider !== 'kakao') {
@@ -166,9 +171,8 @@ authRouter.post(
 authRouter.patch(
   '/me',
   asyncHandler(async (req, res) => {
-    const userId = req.header('x-user-id')
-    const user = userId && (await db.findUserById(userId))
-    if (!user) return res.status(401).json({ error: '로그인이 필요해요.' })
+    const user = await requireUser(req, res)
+    if (!user) return
 
     const { avatar, name, school, grade } = req.body ?? {}
     if (name !== undefined && !name.trim()) return res.status(400).json({ error: '이름을 입력해주세요.' })
@@ -186,15 +190,14 @@ authRouter.patch(
 )
 
 // Self-service account deletion — anyone can delete only their own account
-// (auth is just "you know your own x-user-id", same as every other user
+// (auth is just "you know your own x-api-key", same as every other user
 // route here). Cascades via FK constraints (server/schema.sql) clean up
 // their challenges/verifications/payments; nothing extra to do here.
 authRouter.delete(
   '/me',
   asyncHandler(async (req, res) => {
-    const userId = req.header('x-user-id')
-    const user = userId && (await db.findUserById(userId))
-    if (!user) return res.status(401).json({ error: '로그인이 필요해요.' })
+    const user = await requireUser(req, res)
+    if (!user) return
 
     await db.deleteUser(user.id)
     logEvent('user.delete_self', `${user.name}님이 회원 탈퇴했어요`, { userId: user.id })

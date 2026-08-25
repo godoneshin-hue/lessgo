@@ -13,6 +13,7 @@ export interface DayRecord {
 
 export interface Profile {
   id: string
+  apiKey: string
   name: string
   school: string
   grade: string

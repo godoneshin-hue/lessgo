@@ -1,7 +1,8 @@
 import { Router } from 'express'
-import { db } from '../db.js'
 import { asyncHandler } from '../asyncHandler.js'
 import { toPublicUser } from './auth.js'
+import { requireUser } from '../requireUser.js'
+import { db } from '../db.js'
 
 export const shopRouter = Router()
 
@@ -11,16 +12,6 @@ const SHOP_BADGE_PRICES = {
   'shop-star': 50,
   'shop-crown': 150,
   'shop-diamond': 400,
-}
-
-async function requireUser(req, res) {
-  const userId = req.header('x-user-id')
-  const user = userId && (await db.findUserById(userId))
-  if (!user) {
-    res.status(401).json({ error: '로그인이 필요해요.' })
-    return null
-  }
-  return user
 }
 
 shopRouter.post(
